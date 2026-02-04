@@ -15,7 +15,7 @@ const getStoredBookings = (): Booking[] => {
   return [];
 };
 
-const API_URL = 'http://localhost:5000/api/bookings';
+const API_URL = 'http://161.97.183.92:5000/api/bookings';
 
 export function useBookings() {
   const { user } = useAuth();
