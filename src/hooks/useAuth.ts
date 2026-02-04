@@ -9,7 +9,7 @@ export interface User {
   isApproved: boolean;
 }
 
-const API_URL = 'http://localhost:5001/api/auth';
+const API_URL = 'http://localhost:5000/api/auth';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);

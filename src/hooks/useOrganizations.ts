@@ -14,7 +14,7 @@ const sampleOrganizations: Organization[] = [
     { id: 'org5', name: 'Alpha FinTech' },
 ];
 
-const API_URL = 'http://localhost:5001/api/organizations';
+const API_URL = 'http://localhost:5000/api/organizations';
 
 export function useOrganizations() {
     const [organizations, setOrganizations] = useState<Organization[]>([]);
