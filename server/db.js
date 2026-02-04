@@ -16,10 +16,7 @@ console.log({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: '@Soxfort2025##',
-  database: process.env.DB_NAME,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
+  database: process.env.DB_NAME
 });
 // Test connection
 pool.getConnection((err, connection) => {
