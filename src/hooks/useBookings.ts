@@ -12,7 +12,12 @@ export function useBookings() {
   const fetchBookings = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(API_URL);
+      const token = localStorage.getItem('bb_token');
+      const response = await fetch(API_URL, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setBookings(data);
@@ -100,9 +105,13 @@ export function useBookings() {
       }
 
       try {
+        const token = localStorage.getItem('bb_token');
         const response = await fetch(API_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
           body: JSON.stringify({ ...formData, userId: user?.id }),
         });
 
@@ -122,9 +131,13 @@ export function useBookings() {
 
   const updateBookingStatus = useCallback(async (bookingId: string, status: string) => {
     try {
+      const token = localStorage.getItem('bb_token');
       const response = await fetch(`${API_URL}/${bookingId}/status`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ status }),
       });
 
@@ -157,13 +170,15 @@ export function useBookings() {
     return bookings
       .filter((b) => {
         const bDate = b.date.includes('T') ? b.date.split('T')[0] : b.date;
-        return bDate >= today && b.status !== 'cancelled';
+        // Filter by user ID to ensure only user's bookings are shown
+        const isUserBooking = !user || b.userId === user.id;
+        return bDate >= today && b.status !== 'cancelled' && isUserBooking;
       })
       .sort((a, b) => {
         if (a.date !== b.date) return a.date.localeCompare(b.date);
         return a.startTime.localeCompare(b.startTime);
       });
-  }, [bookings]);
+  }, [bookings, user?.id]);
 
   return {
     bookings,

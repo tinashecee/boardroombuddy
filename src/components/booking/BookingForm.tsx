@@ -187,9 +187,9 @@ export function BookingForm({ selectedDate, initialStartTime, onSubmit, onClose 
               <Label htmlFor="contactName">Contact Name</Label>
               <Input
                 id="contactName"
-                readOnly
+                required
                 value={formData.contactName}
-                className="bg-muted cursor-not-allowed"
+                onChange={(e) => setFormData((prev) => ({ ...prev, contactName: e.target.value }))}
               />
             </div>
             <div className="space-y-2">
@@ -197,9 +197,9 @@ export function BookingForm({ selectedDate, initialStartTime, onSubmit, onClose 
               <Input
                 id="contactEmail"
                 type="email"
-                readOnly
+                required
                 value={formData.contactEmail}
-                className="bg-muted cursor-not-allowed"
+                onChange={(e) => setFormData((prev) => ({ ...prev, contactEmail: e.target.value }))}
               />
             </div>
           </div>
