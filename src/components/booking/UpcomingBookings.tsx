@@ -19,7 +19,6 @@ export function UpcomingBookings({ bookings, onCancel }: UpcomingBookingsProps) 
 
   const formatDate = (dateStr: string) => {
     // Handle date string in YYYY-MM-DD format
-    // Remove any time portion if present (e.g., "2026-02-05T00:00:00" -> "2026-02-05")
     const dateOnly = dateStr.split('T')[0].trim();
     
     // Parse the date components
@@ -39,22 +38,17 @@ export function UpcomingBookings({ bookings, onCancel }: UpcomingBookingsProps) 
       return dateStr;
     }
     
-    // Get today's date in YYYY-MM-DD format for comparison (avoid timezone issues)
-    const today = new Date();
-    const todayYear = today.getFullYear();
-    const todayMonth = today.getMonth() + 1; // getMonth() is 0-indexed
-    const todayDay = today.getDate();
-    const todayStr = `${todayYear}-${String(todayMonth).padStart(2, '0')}-${String(todayDay).padStart(2, '0')}`;
+    // Get today's date at midnight UTC to avoid timezone issues
+    const now = new Date();
+    const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    const todayStr = `${todayUTC.getUTCFullYear()}-${String(todayUTC.getUTCMonth() + 1).padStart(2, '0')}-${String(todayUTC.getUTCDate()).padStart(2, '0')}`;
     
-    // Get tomorrow's date in YYYY-MM-DD format
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowYear = tomorrow.getFullYear();
-    const tomorrowMonth = tomorrow.getMonth() + 1;
-    const tomorrowDay = tomorrow.getDate();
-    const tomorrowStr = `${tomorrowYear}-${String(tomorrowMonth).padStart(2, '0')}-${String(tomorrowDay).padStart(2, '0')}`;
+    // Get tomorrow's date
+    const tomorrowUTC = new Date(todayUTC);
+    tomorrowUTC.setUTCDate(tomorrowUTC.getUTCDate() + 1);
+    const tomorrowStr = `${tomorrowUTC.getUTCFullYear()}-${String(tomorrowUTC.getUTCMonth() + 1).padStart(2, '0')}-${String(tomorrowUTC.getUTCDate()).padStart(2, '0')}`;
     
-    // Compare date strings directly (most reliable)
+    // Compare date strings directly
     if (dateOnly === todayStr) {
       return 'Today';
     }
@@ -62,9 +56,8 @@ export function UpcomingBookings({ bookings, onCancel }: UpcomingBookingsProps) 
       return 'Tomorrow';
     }
     
-    // Format the date directly from components - no Date object conversion to avoid timezone issues
-    // Create a date object ONLY to get the weekday name (this is safe as it's just for display)
-    const bookingDate = new Date(year, month - 1, day, 12, 0, 0); // Use noon to avoid timezone edge cases
+    // Create date in UTC to avoid timezone shifting
+    const bookingDate = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
     
     // Validate the date
     if (isNaN(bookingDate.getTime())) {
@@ -72,14 +65,14 @@ export function UpcomingBookings({ bookings, onCancel }: UpcomingBookingsProps) 
       return dateStr;
     }
     
-    // Get weekday name
-    const weekday = bookingDate.toLocaleDateString('en-US', { weekday: 'short' });
+    // Get weekday name using UTC
+    const weekday = bookingDate.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' });
     
     // Month names
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const monthName = monthNames[month - 1];
     
-    // Format using the ORIGINAL parsed day value (not from Date object): "Wed, Feb 5, 2026"
+    // Format using the original parsed day value
     return `${weekday}, ${monthName} ${day}, ${year}`;
   };
 
