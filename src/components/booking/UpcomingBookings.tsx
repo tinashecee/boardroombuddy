@@ -18,16 +18,35 @@ export function UpcomingBookings({ bookings, onCancel }: UpcomingBookingsProps) 
   };
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr + 'T00:00:00');
+    // Handle date string in YYYY-MM-DD format
+    // Remove any time portion if present (e.g., "2026-02-05T00:00:00" -> "2026-02-05")
+    const dateOnly = dateStr.split('T')[0].trim();
+    
+    // Parse the date components
+    const [year, month, day] = dateOnly.split('-').map(Number);
+    
+    // Create date object using local timezone
+    const date = new Date(year, month - 1, day);
+    
+    // Validate the date
+    if (isNaN(date.getTime())) {
+      console.error('Invalid date:', dateStr);
+      return dateStr; // Return original string if invalid
+    }
+    
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // Reset hours for comparison
+    const compareDate = new Date(date);
+    compareDate.setHours(0, 0, 0, 0);
 
-    if (date.toDateString() === today.toDateString()) {
+    if (compareDate.toDateString() === today.toDateString()) {
       return 'Today';
     }
-    if (date.toDateString() === tomorrow.toDateString()) {
+    if (compareDate.toDateString() === tomorrow.toDateString()) {
       return 'Tomorrow';
     }
     return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
