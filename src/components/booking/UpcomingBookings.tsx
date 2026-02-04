@@ -62,9 +62,9 @@ export function UpcomingBookings({ bookings, onCancel }: UpcomingBookingsProps) 
       return 'Tomorrow';
     }
     
-    // Format the date directly from components to avoid timezone issues
-    // Create a date object in local timezone for getting weekday
-    const bookingDate = new Date(year, month - 1, day);
+    // Format the date directly from components - no Date object conversion to avoid timezone issues
+    // Create a date object ONLY to get the weekday name (this is safe as it's just for display)
+    const bookingDate = new Date(year, month - 1, day, 12, 0, 0); // Use noon to avoid timezone edge cases
     
     // Validate the date
     if (isNaN(bookingDate.getTime())) {
@@ -79,7 +79,7 @@ export function UpcomingBookings({ bookings, onCancel }: UpcomingBookingsProps) 
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const monthName = monthNames[month - 1];
     
-    // Format: "Wed, Feb 7, 2026"
+    // Format using the ORIGINAL parsed day value (not from Date object): "Wed, Feb 5, 2026"
     return `${weekday}, ${monthName} ${day}, ${year}`;
   };
 
