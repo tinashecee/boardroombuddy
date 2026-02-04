@@ -39,37 +39,36 @@ export function UpcomingBookings({ bookings, onCancel }: UpcomingBookingsProps) 
       return dateStr;
     }
     
-    // Create date object using local timezone (month is 0-indexed)
+    // Get today's date in YYYY-MM-DD format for comparison (avoid timezone issues)
+    const today = new Date();
+    const todayYear = today.getFullYear();
+    const todayMonth = today.getMonth() + 1; // getMonth() is 0-indexed
+    const todayDay = today.getDate();
+    const todayStr = `${todayYear}-${String(todayMonth).padStart(2, '0')}-${String(todayDay).padStart(2, '0')}`;
+    
+    // Get tomorrow's date in YYYY-MM-DD format
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowYear = tomorrow.getFullYear();
+    const tomorrowMonth = tomorrow.getMonth() + 1;
+    const tomorrowDay = tomorrow.getDate();
+    const tomorrowStr = `${tomorrowYear}-${String(tomorrowMonth).padStart(2, '0')}-${String(tomorrowDay).padStart(2, '0')}`;
+    
+    // Compare date strings directly (most reliable)
+    if (dateOnly === todayStr) {
+      return 'Today';
+    }
+    if (dateOnly === tomorrowStr) {
+      return 'Tomorrow';
+    }
+    
+    // Create date object for formatting (month is 0-indexed)
     const bookingDate = new Date(year, month - 1, day);
     
     // Validate the date
     if (isNaN(bookingDate.getTime())) {
       console.error('Invalid date:', dateStr);
       return dateStr;
-    }
-    
-    // Get today's date at midnight
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    // Get tomorrow's date at midnight
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    // Reset booking date to midnight for comparison
-    const compareDate = new Date(bookingDate);
-    compareDate.setHours(0, 0, 0, 0);
-    
-    // Compare dates using getTime() for accurate comparison
-    const bookingTime = compareDate.getTime();
-    const todayTime = today.getTime();
-    const tomorrowTime = tomorrow.getTime();
-
-    if (bookingTime === todayTime) {
-      return 'Today';
-    }
-    if (bookingTime === tomorrowTime) {
-      return 'Tomorrow';
     }
     
     // Format the date for display
