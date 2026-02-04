@@ -62,7 +62,8 @@ export function UpcomingBookings({ bookings, onCancel }: UpcomingBookingsProps) 
       return 'Tomorrow';
     }
     
-    // Create date object for formatting (month is 0-indexed)
+    // Format the date directly from components to avoid timezone issues
+    // Create a date object in local timezone for getting weekday
     const bookingDate = new Date(year, month - 1, day);
     
     // Validate the date
@@ -71,8 +72,15 @@ export function UpcomingBookings({ bookings, onCancel }: UpcomingBookingsProps) 
       return dateStr;
     }
     
-    // Format the date for display
-    return bookingDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    // Get weekday name
+    const weekday = bookingDate.toLocaleDateString('en-US', { weekday: 'short' });
+    
+    // Month names
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthName = monthNames[month - 1];
+    
+    // Format: "Wed, Feb 7, 2026"
+    return `${weekday}, ${monthName} ${day}, ${year}`;
   };
 
   const groupedBookings = bookings.reduce((acc, booking) => {
