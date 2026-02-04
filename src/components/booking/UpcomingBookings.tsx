@@ -80,8 +80,9 @@ export function UpcomingBookings({ bookings, onCancel }: UpcomingBookingsProps) 
       <div className="space-y-6">
         {Object.entries(groupedBookings).map(([date, dateBookings]) => (
           <div key={date}>
-            <div className="text-sm font-medium text-muted-foreground mb-2">
-              {formatDate(date)}
+            <div className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-primary" />
+              <span>{formatDate(date)}</span>
             </div>
             <div className="space-y-2">
               {dateBookings.map((booking) => (
