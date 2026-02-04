@@ -75,9 +75,9 @@ export function useAuth() {
 
       const data = await response.json();
       if (response.ok) {
-        localStorage.setItem('bb_token', data.token);
-        setUser(data.user);
-        return { success: true };
+        // Don't store token or set user - user must wait for approval
+        // The user will need to log in after admin approval
+        return { success: true, message: data.message };
       } else {
         return { success: false, error: data.message };
       }

@@ -36,7 +36,7 @@ const Auth = () => {
                 toast.success("Welcome back!");
                 navigate("/");
             } else {
-                toast.error("Invalid credentials. Please try again.");
+                toast.error(result.error || "Invalid credentials. Please try again.");
             }
         } catch (error) {
             toast.error("Failed to login. Please check your connection.");
@@ -51,10 +51,15 @@ const Auth = () => {
         try {
             const result = await signup(name, email, companyName, password);
             if (result.success) {
-                toast.success("Account created! Waiting for admin approval.");
-                navigate("/");
+                toast.success("Account created! Please wait for admin approval before logging in.");
+                // Don't navigate - user must wait for approval
+                // Clear form
+                setName("");
+                setEmail("");
+                setCompanyName("");
+                setPassword("");
             } else {
-                toast.error("Signup failed. That email might already be in use.");
+                toast.error(result.error || "Signup failed. That email might already be in use.");
             }
         } catch (error) {
             toast.error("Failed to create account.");

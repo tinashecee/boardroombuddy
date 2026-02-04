@@ -17,20 +17,18 @@ router.post('/signup', async (req, res) => {
     const passwordHash = await bcrypt.hash(password, 10);
     const userId = crypto.randomUUID();
     
-    // First user is automatically ADMIN and approved for demo purposes
-    const [userCount] = await db.query('SELECT COUNT(*) as count FROM users');
-    const role = userCount[0].count === 0 ? 'ADMIN' : 'USER';
-    const isApproved = userCount[0].count === 0;
+    // All new users are created as USER role and must await admin approval
+    const role = 'USER';
+    const isApproved = false;
 
     await db.query(
       'INSERT INTO users (id, name, email, company_name, role, is_approved, password_hash) VALUES (?, ?, ?, ?, ?, ?, ?)',
       [userId, name, email, companyName, role, isApproved, passwordHash]
     );
 
-    const token = jwt.sign({ id: userId, role }, process.env.JWT_SECRET, { expiresIn: '24h' });
-    
+    // Don't return token - user must wait for approval before logging in
     res.status(201).json({ 
-      token, 
+      message: 'Account created successfully. Please wait for admin approval before logging in.',
       user: { id: userId, name, email, companyName, role, isApproved } 
     });
   } catch (error) {
@@ -56,6 +54,13 @@ router.post('/login', async (req, res) => {
 
     if (!user || !(await bcrypt.compare(password, user.password_hash))) {
       return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Check if user is approved before allowing login
+    if (!user.is_approved) {
+      return res.status(403).json({ 
+        message: 'Your account is pending approval. Please wait for an administrator to approve your account.' 
+      });
     }
 
     const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '24h' });
