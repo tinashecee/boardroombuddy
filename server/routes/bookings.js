@@ -56,7 +56,23 @@ router.post('/', async (req, res) => {
       [id, userId, organizationName, contactName, contactEmail, date, startTime, endTime, purpose, attendees]
     );
     
-    res.status(201).json({ id, ...req.body, status: 'pending' });
+    // Return booking in the same format as GET endpoint
+    const booking = {
+      id,
+      userId,
+      organizationName,
+      contactName,
+      contactEmail,
+      date,
+      startTime: startTime.substring(0, 5), // Ensure HH:mm format
+      endTime: endTime.substring(0, 5),
+      purpose: purpose || '',
+      attendees,
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    };
+    
+    res.status(201).json(booking);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error creating booking' });

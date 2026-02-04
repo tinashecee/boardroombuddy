@@ -13,7 +13,7 @@ import { useOrganizations } from '@/hooks/useOrganizations';
 interface BookingFormProps {
   selectedDate: Date;
   initialStartTime?: string;
-  onSubmit: (data: BookingFormData) => { success: boolean; error?: string };
+  onSubmit: (data: BookingFormData) => Promise<{ success: boolean; error?: string }>;
   onClose: () => void;
 }
 
@@ -42,7 +42,7 @@ export function BookingForm({ selectedDate, initialStartTime, onSubmit, onClose 
     return `${String(endHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -51,14 +51,18 @@ export function BookingForm({ selectedDate, initialStartTime, onSubmit, onClose 
       return;
     }
 
-    const result = onSubmit(formData);
-    if (result.success) {
-      setSuccess(true);
-      setTimeout(() => {
-        onClose();
-      }, 1500);
-    } else {
-      setError(result.error || 'Failed to create booking');
+    try {
+      const result = await onSubmit(formData);
+      if (result.success) {
+        setSuccess(true);
+        setTimeout(() => {
+          onClose();
+        }, 1500);
+      } else {
+        setError(result.error || 'Failed to create booking');
+      }
+    } catch (error) {
+      setError('Failed to create booking. Please try again.');
     }
   };
 
