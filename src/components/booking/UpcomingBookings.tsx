@@ -56,8 +56,11 @@ export function UpcomingBookings({ bookings, onCancel }: UpcomingBookingsProps) 
       return 'Tomorrow';
     }
     
-    // Create date in UTC to avoid timezone shifting
-    const bookingDate = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+    // Add 1 day to compensate for timezone offset
+    const displayDay = day + 1;
+    
+    // Create date in UTC to avoid timezone shifting (using displayDay for weekday calculation)
+    const bookingDate = new Date(Date.UTC(year, month - 1, displayDay, 12, 0, 0));
     
     // Validate the date
     if (isNaN(bookingDate.getTime())) {
@@ -72,8 +75,8 @@ export function UpcomingBookings({ bookings, onCancel }: UpcomingBookingsProps) 
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const monthName = monthNames[month - 1];
     
-    // Format using the original parsed day value
-    return `${weekday}, ${monthName} ${day}, ${year}`;
+    // Format using the day + 1 value
+    return `${weekday}, ${monthName} ${displayDay}, ${year}`;
   };
 
   const groupedBookings = bookings.reduce((acc, booking) => {
