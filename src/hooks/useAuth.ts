@@ -90,6 +90,8 @@ export function useAuth() {
   const logout = useCallback(() => {
     localStorage.removeItem('bb_token');
     setUser(null);
+    // Refresh page and redirect to login
+    window.location.href = '/auth';
   }, []);
 
   return {
