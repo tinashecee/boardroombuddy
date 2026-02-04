@@ -49,12 +49,12 @@ export function UpcomingBookings({ bookings, onCancel }: UpcomingBookingsProps) 
     const tomorrowStr = `${tomorrowUTC.getUTCFullYear()}-${String(tomorrowUTC.getUTCMonth() + 1).padStart(2, '0')}-${String(tomorrowUTC.getUTCDate()).padStart(2, '0')}`;
     
     // Compare date strings directly
-    if (dateOnly === todayStr) {
-      return 'Today';
-    }
-    if (dateOnly === tomorrowStr) {
-      return 'Tomorrow';
-    }
+    //if (dateOnly === todayStr) {
+    //  return 'Today';
+   // }
+    //if (dateOnly === tomorrowStr) {
+     //// return 'Tomorrow';
+   // }
     
     // Add 1 day to compensate for timezone offset
     const displayDay = day + 1;
