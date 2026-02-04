@@ -23,33 +23,57 @@ export function UpcomingBookings({ bookings, onCancel }: UpcomingBookingsProps) 
     const dateOnly = dateStr.split('T')[0].trim();
     
     // Parse the date components
-    const [year, month, day] = dateOnly.split('-').map(Number);
-    
-    // Create date object using local timezone
-    const date = new Date(year, month - 1, day);
-    
-    // Validate the date
-    if (isNaN(date.getTime())) {
-      console.error('Invalid date:', dateStr);
-      return dateStr; // Return original string if invalid
+    const parts = dateOnly.split('-');
+    if (parts.length !== 3) {
+      console.error('Invalid date format:', dateStr);
+      return dateStr;
     }
     
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10);
+    const day = parseInt(parts[2], 10);
+    
+    // Validate parsed values
+    if (isNaN(year) || isNaN(month) || isNaN(day)) {
+      console.error('Invalid date components:', dateStr);
+      return dateStr;
+    }
+    
+    // Create date object using local timezone (month is 0-indexed)
+    const bookingDate = new Date(year, month - 1, day);
+    
+    // Validate the date
+    if (isNaN(bookingDate.getTime())) {
+      console.error('Invalid date:', dateStr);
+      return dateStr;
+    }
+    
+    // Get today's date at midnight
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    
+    // Get tomorrow's date at midnight
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     
-    // Reset hours for comparison
-    const compareDate = new Date(date);
+    // Reset booking date to midnight for comparison
+    const compareDate = new Date(bookingDate);
     compareDate.setHours(0, 0, 0, 0);
+    
+    // Compare dates using getTime() for accurate comparison
+    const bookingTime = compareDate.getTime();
+    const todayTime = today.getTime();
+    const tomorrowTime = tomorrow.getTime();
 
-    if (compareDate.toDateString() === today.toDateString()) {
+    if (bookingTime === todayTime) {
       return 'Today';
     }
-    if (compareDate.toDateString() === tomorrow.toDateString()) {
+    if (bookingTime === tomorrowTime) {
       return 'Tomorrow';
     }
-    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    
+    // Format the date for display
+    return bookingDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   const groupedBookings = bookings.reduce((acc, booking) => {
