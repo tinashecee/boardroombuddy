@@ -26,27 +26,79 @@ interface PendingUser {
     companyName: string;
 }
 
+const API_URL = 'http://161.97.183.92:5000/api/auth';
+
 export const AdminPanel = () => {
     const { bookings, approveBooking, rejectBooking } = useBookings();
     const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
+    const [isLoadingUsers, setIsLoadingUsers] = useState(true);
 
-    // Mock pending users for demonstration
     useEffect(() => {
-        const mockPending = [
-            { id: "u101", name: "Alice Brown", email: "alice@startup.com", companyName: "Innovate Inc" },
-            { id: "u102", name: "Bob Wilson", email: "bob@global.com", companyName: "Global Corp" },
-        ];
-        setPendingUsers(mockPending);
+        fetchPendingUsers();
     }, []);
 
-    const handleApproveUser = (userId: string) => {
-        setPendingUsers((prev) => prev.filter((u) => u.id !== userId));
-        toast.success("User account approved!");
+    const fetchPendingUsers = async () => {
+        try {
+            setIsLoadingUsers(true);
+            const token = localStorage.getItem('bb_token');
+            const response = await fetch(`${API_URL}/pending-users`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                setPendingUsers(data);
+            } else {
+                console.error('Failed to fetch pending users');
+            }
+        } catch (error) {
+            console.error('Error fetching pending users:', error);
+        } finally {
+            setIsLoadingUsers(false);
+        }
     };
 
-    const handleRejectUser = (userId: string) => {
-        setPendingUsers((prev) => prev.filter((u) => u.id !== userId));
-        toast.error("User account rejected");
+    const handleApproveUser = async (userId: string) => {
+        try {
+            const token = localStorage.getItem('bb_token');
+            const response = await fetch(`${API_URL}/users/${userId}/approve`, {
+                method: 'PATCH',
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                setPendingUsers((prev) => prev.filter((u) => u.id !== userId));
+                toast.success("User account approved!");
+            } else {
+                toast.error("Failed to approve user");
+            }
+        } catch (error) {
+            console.error('Error approving user:', error);
+            toast.error("Failed to approve user");
+        }
+    };
+
+    const handleRejectUser = async (userId: string) => {
+        try {
+            const token = localStorage.getItem('bb_token');
+            const response = await fetch(`${API_URL}/users/${userId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (response.ok) {
+                setPendingUsers((prev) => prev.filter((u) => u.id !== userId));
+                toast.error("User account rejected");
+            } else {
+                toast.error("Failed to reject user");
+            }
+        } catch (error) {
+            console.error('Error rejecting user:', error);
+            toast.error("Failed to reject user");
+        }
     };
 
     const pendingBookings = bookings.filter((b) => b.status === "pending");
@@ -73,7 +125,14 @@ export const AdminPanel = () => {
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="pt-6">
-                        {pendingUsers.length === 0 ? (
+                        {isLoadingUsers ? (
+                            <div className="py-12 text-center space-y-2">
+                                <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto animate-spin">
+                                    <Clock className="w-6 h-6 text-muted-foreground" />
+                                </div>
+                                <p className="text-sm text-muted-foreground">Loading pending users...</p>
+                            </div>
+                        ) : pendingUsers.length === 0 ? (
                             <div className="py-12 text-center space-y-2">
                                 <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto">
                                     <Check className="w-6 h-6 text-muted-foreground" />

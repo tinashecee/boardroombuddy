@@ -5,15 +5,6 @@ export interface Organization {
     name: string;
 }
 
-// Mock data for demo purposes, representing what would be fetched from MySQL
-const sampleOrganizations: Organization[] = [
-    { id: 'org1', name: 'Acme Corp' },
-    { id: 'org2', name: 'Tech Solutions Ltd' },
-    { id: 'org3', name: 'Green Energy Co' },
-    { id: 'org4', name: 'Global Logistics' },
-    { id: 'org5', name: 'Alpha FinTech' },
-];
-
 const API_URL = 'http://161.97.183.92:5000/api/organizations';
 
 export function useOrganizations() {

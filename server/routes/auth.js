@@ -95,4 +95,78 @@ router.get('/me', async (req, res) => {
   }
 });
 
+// Get pending users (admin only)
+router.get('/pending-users', async (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ message: 'No token provided' });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Check if user is admin
+    const [users] = await db.query('SELECT role FROM users WHERE id = ?', [decoded.id]);
+    if (!users[0] || users[0].role !== 'ADMIN') {
+      return res.status(403).json({ message: 'Admin access required' });
+    }
+
+    // Get pending users
+    const [pendingUsers] = await db.query(
+      'SELECT id, name, email, company_name as companyName FROM users WHERE is_approved = FALSE ORDER BY created_at ASC'
+    );
+    
+    res.json(pendingUsers);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error fetching pending users' });
+  }
+});
+
+// Approve user
+router.patch('/users/:id/approve', async (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ message: 'No token provided' });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Check if user is admin
+    const [users] = await db.query('SELECT role FROM users WHERE id = ?', [decoded.id]);
+    if (!users[0] || users[0].role !== 'ADMIN') {
+      return res.status(403).json({ message: 'Admin access required' });
+    }
+
+    const { id } = req.params;
+    await db.query('UPDATE users SET is_approved = TRUE WHERE id = ?', [id]);
+    
+    res.json({ message: 'User approved successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error approving user' });
+  }
+});
+
+// Reject user (delete)
+router.delete('/users/:id', async (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ message: 'No token provided' });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Check if user is admin
+    const [users] = await db.query('SELECT role FROM users WHERE id = ?', [decoded.id]);
+    if (!users[0] || users[0].role !== 'ADMIN') {
+      return res.status(403).json({ message: 'Admin access required' });
+    }
+
+    const { id } = req.params;
+    await db.query('DELETE FROM users WHERE id = ? AND is_approved = FALSE', [id]);
+    
+    res.json({ message: 'User rejected successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error rejecting user' });
+  }
+});
+
 module.exports = router;

@@ -2,19 +2,6 @@ import { useState, useCallback, useEffect } from 'react';
 import { Booking, BookingFormData, TIME_SLOTS } from '@/types/booking';
 import { useAuth } from './useAuth';
 
-// Persist bookings to localStorage for demo purposes
-const getStoredBookings = (): Booking[] => {
-  const stored = localStorage.getItem('bb_bookings');
-  if (stored) {
-    try {
-      return JSON.parse(stored);
-    } catch (e) {
-      console.error('Failed to parse stored bookings', e);
-    }
-  }
-  return [];
-};
-
 const API_URL = 'http://161.97.183.92:5000/api/bookings';
 
 export function useBookings() {
