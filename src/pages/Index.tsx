@@ -62,7 +62,27 @@ const Index = () => {
   const upcomingBookings = getUpcomingBookings();
 
   // Get dates that have bookings for calendar indicators (use allBookings to show all bookings on calendar)
-  const bookingDates = [...new Set((allBookings || bookings).filter(b => b.status !== 'cancelled').map((b) => b.date))];
+  // Add 1 day to each booking date to fix display offset (Friday bookings showing on Thursday)
+  const bookingDates = [...new Set((allBookings || bookings)
+    .filter(b => b.status !== 'cancelled')
+    .map((b) => {
+      // Parse the date string and add 1 day
+      const dateStr = b.date.includes('T') ? b.date.split('T')[0] : b.date;
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+        const day = parseInt(parts[2], 10);
+        const date = new Date(year, month, day);
+        date.setDate(date.getDate() + 1); // Add 1 day
+        // Format back to YYYY-MM-DD
+        const newYear = date.getFullYear();
+        const newMonth = String(date.getMonth() + 1).padStart(2, '0');
+        const newDay = String(date.getDate()).padStart(2, '0');
+        return `${newYear}-${newMonth}-${newDay}`;
+      }
+      return dateStr; // Return original if parsing fails
+    }))];
 
   return (
     <div className="min-h-screen bg-background">
