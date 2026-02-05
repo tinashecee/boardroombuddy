@@ -44,17 +44,21 @@ import { useMemo } from "react";
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 const Reports = () => {
-    const { bookings } = useBookings();
+    const { bookings, allBookings } = useBookings();
     const navigate = useNavigate();
+    
+    // Use allBookings for reports (shows all bookings, not just user's)
+    // Fallback to bookings if allBookings is not available
+    const reportBookings = allBookings && allBookings.length > 0 ? allBookings : bookings;
 
     const stats = useMemo(() => {
-        const total = bookings.length;
-        const confirmed = bookings.filter(b => b.status === 'confirmed').length;
-        const cancelled = bookings.filter(b => b.status === 'cancelled').length;
+        const total = reportBookings.length;
+        const confirmed = reportBookings.filter(b => b.status === 'confirmed').length;
+        const cancelled = reportBookings.filter(b => b.status === 'cancelled').length;
 
         // Organization stats
         const orgMap: Record<string, number> = {};
-        bookings.forEach(b => {
+        reportBookings.forEach(b => {
             orgMap[b.organizationName] = (orgMap[b.organizationName] || 0) + 1;
         });
 
@@ -67,7 +71,7 @@ const Reports = () => {
             'Mon': 0, 'Tue': 0, 'Wed': 0, 'Thu': 0, 'Fri': 0
         };
 
-        bookings.forEach(b => {
+        reportBookings.forEach(b => {
             const date = new Date(b.date);
             const day = date.toLocaleDateString('en-US', { weekday: 'short' });
             if (dayMap[day] !== undefined) {
@@ -85,7 +89,7 @@ const Reports = () => {
             dayData,
             topOrg: orgData[0]?.name || "N/A"
         };
-    }, [bookings]);
+    }, [reportBookings]);
 
     return (
         <div className="min-h-screen bg-background flex flex-col">
@@ -252,14 +256,14 @@ const Reports = () => {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {bookings.length === 0 ? (
+                                {reportBookings.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
                                             No records found.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    bookings
+                                    reportBookings
                                         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                                         .map((booking) => (
                                             <TableRow key={booking.id} className="hover:bg-muted/30">
