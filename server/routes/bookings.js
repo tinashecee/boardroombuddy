@@ -131,6 +131,52 @@ router.post('/', async (req, res) => {
   }
 });
 
+// Get all bookings for availability checking (calendar display)
+router.get('/availability', async (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ message: 'No token provided' });
+  }
+
+  try {
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const [users] = await db.query('SELECT id FROM users WHERE id = ?', [decoded.id]);
+    
+    if (!users[0]) {
+      return res.status(401).json({ message: 'User not found' });
+    }
+
+    // Return ALL bookings for availability checking (no user_id filter)
+    const [rows] = await db.query('SELECT * FROM bookings ORDER BY booking_date DESC, start_time ASC');
+    
+    // Map database fields to frontend camelCase
+    const bookings = rows.map(b => ({
+      id: b.id,
+      userId: b.user_id,
+      organizationName: b.organization_name,
+      contactName: b.contact_name,
+      contactEmail: b.contact_email,
+      date: b.booking_date,
+      startTime: b.start_time.substring(0, 5), // HH:mm
+      endTime: b.end_time.substring(0, 5),
+      purpose: b.purpose,
+      attendees: b.attendees,
+      status: b.status,
+      createdAt: b.created_at
+    }));
+    
+    res.json(bookings);
+  } catch (error) {
+    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Invalid or expired token' });
+    }
+    console.error(error);
+    res.status(500).json({ message: 'Error fetching bookings' });
+  }
+});
+
 // Update booking status (confirm/cancel/reject)
 router.patch('/:id/status', async (req, res) => {
   const token = req.headers.authorization?.split(' ')[1];
@@ -147,7 +193,7 @@ router.patch('/:id/status', async (req, res) => {
   }
 
   try {
-    // Verify token and check if user is admin
+    // Verify token and get user info
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const [users] = await db.query('SELECT id, role FROM users WHERE id = ?', [decoded.id]);
     const user = users[0];
@@ -156,13 +202,30 @@ router.patch('/:id/status', async (req, res) => {
       return res.status(401).json({ message: 'User not found' });
     }
 
-    // Only admins can update booking status
-    if (user.role !== 'ADMIN') {
-      return res.status(403).json({ message: 'Admin access required' });
+    // Get the booking to check ownership
+    const [bookings] = await db.query('SELECT user_id FROM bookings WHERE id = ?', [id]);
+    const booking = bookings[0];
+
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
     }
 
-    await db.query('UPDATE bookings SET status = ? WHERE id = ?', [status, id]);
-    res.json({ message: `Booking status updated to ${status}` });
+    // Allow cancellation if user owns the booking, or allow any status change if admin
+    const isOwner = booking.user_id === user.id;
+    const isAdmin = user.role === 'ADMIN';
+    
+    if (status === 'cancelled' && (isAdmin || isOwner)) {
+      // Users can cancel their own bookings, admins can cancel any
+      await db.query('UPDATE bookings SET status = ? WHERE id = ?', [status, id]);
+      res.json({ message: `Booking status updated to ${status}` });
+    } else if (isAdmin) {
+      // Admins can set any status
+      await db.query('UPDATE bookings SET status = ? WHERE id = ?', [status, id]);
+      res.json({ message: `Booking status updated to ${status}` });
+    } else {
+      // Non-admins can only cancel their own bookings
+      return res.status(403).json({ message: 'You can only cancel your own bookings' });
+    }
   } catch (error) {
     if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
       return res.status(401).json({ message: 'Invalid or expired token' });

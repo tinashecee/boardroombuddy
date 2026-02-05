@@ -33,6 +33,7 @@ const Index = () => {
     cancelBooking,
     getUpcomingBookings,
     bookings,
+    allBookings,
   } = useBookings();
 
   const handleSlotClick = (startTime: string) => {
@@ -52,8 +53,8 @@ const Index = () => {
   const timeSlots = getAvailableTimeSlots(selectedDate.toISOString().split('T')[0]);
   const upcomingBookings = getUpcomingBookings();
 
-  // Get dates that have bookings for calendar indicators
-  const bookingDates = [...new Set(bookings.filter(b => b.status !== 'cancelled').map((b) => b.date))];
+  // Get dates that have bookings for calendar indicators (use allBookings to show all bookings on calendar)
+  const bookingDates = [...new Set((allBookings || bookings).filter(b => b.status !== 'cancelled').map((b) => b.date))];
 
   return (
     <div className="min-h-screen bg-background">

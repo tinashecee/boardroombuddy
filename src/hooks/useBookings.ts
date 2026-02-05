@@ -6,9 +6,11 @@ const API_URL = 'http://161.97.183.92:5000/api/bookings';
 
 export function useBookings() {
   const { user } = useAuth();
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]); // User's bookings only
+  const [allBookings, setAllBookings] = useState<Booking[]>([]); // All bookings for availability
   const [isLoading, setIsLoading] = useState(true);
 
+  // Fetch user's bookings (for upcoming bookings list)
   const fetchBookings = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -29,19 +31,39 @@ export function useBookings() {
     }
   }, []);
 
+  // Fetch all bookings for availability checking (calendar display)
+  const fetchAllBookings = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('bb_token');
+      const response = await fetch(`${API_URL}/availability`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAllBookings(data);
+      }
+    } catch (error) {
+      console.error('Error fetching all bookings:', error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchBookings();
-  }, [fetchBookings]);
+    fetchAllBookings();
+  }, [fetchBookings, fetchAllBookings]);
 
   const getBookingsForDate = useCallback(
     (date: string) => {
-      return bookings.filter((booking) => {
+      // Use allBookings for availability checking (includes all users' bookings)
+      return allBookings.filter((booking) => {
         // Handle ISO date comparison
         const bDate = booking.date.includes('T') ? booking.date.split('T')[0] : booking.date;
         return bDate === date && booking.status !== 'cancelled';
       });
     },
-    [bookings]
+    [allBookings]
   );
 
   const checkTimeSlotAvailability = useCallback(
@@ -118,6 +140,7 @@ export function useBookings() {
         if (response.ok) {
           const newBooking = await response.json();
           setBookings((prev) => [...prev, newBooking]);
+          setAllBookings((prev) => [...prev, newBooking]);
           return { success: true, booking: newBooking };
         } else {
           return { success: false, error: 'Failed to create booking' };
@@ -143,6 +166,11 @@ export function useBookings() {
 
       if (response.ok) {
         setBookings((prev) =>
+          prev.map((booking) =>
+            booking.id === bookingId ? { ...booking, status: status as any } : booking
+          )
+        );
+        setAllBookings((prev) =>
           prev.map((booking) =>
             booking.id === bookingId ? { ...booking, status: status as any } : booking
           )
@@ -181,7 +209,8 @@ export function useBookings() {
   }, [bookings, user?.id]);
 
   return {
-    bookings,
+    bookings, // User's bookings only (for upcoming list)
+    allBookings, // All bookings (for calendar/availability)
     isLoading,
     getBookingsForDate,
     getAvailableTimeSlots,
@@ -191,6 +220,8 @@ export function useBookings() {
     approveBooking,
     rejectBooking,
     getUpcomingBookings,
+    getBookingsThisWeek,
+    getBookingsThisMonth,
   };
 }
 
