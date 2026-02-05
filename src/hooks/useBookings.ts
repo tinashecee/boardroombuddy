@@ -208,6 +208,59 @@ export function useBookings() {
       });
   }, [bookings, user?.id]);
 
+  const getBookingsThisWeek = useCallback(() => {
+    const now = new Date();
+    // Get the start of the week (Sunday)
+    const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - dayOfWeek);
+    startOfWeek.setHours(0, 0, 0, 0);
+    
+    // Get the end of the week (Saturday)
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+    
+    const startStr = startOfWeek.toISOString().split('T')[0];
+    const endStr = endOfWeek.toISOString().split('T')[0];
+    
+    return bookings
+      .filter((b) => {
+        const bDate = b.date.includes('T') ? b.date.split('T')[0] : b.date;
+        const isUserBooking = !user || b.userId === user.id;
+        return bDate >= startStr && bDate <= endStr && b.status !== 'cancelled' && isUserBooking;
+      })
+      .sort((a, b) => {
+        if (a.date !== b.date) return a.date.localeCompare(b.date);
+        return a.startTime.localeCompare(b.startTime);
+      });
+  }, [bookings, user?.id]);
+
+  const getBookingsThisMonth = useCallback(() => {
+    const now = new Date();
+    // Get the start of the month
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    
+    // Get the end of the month
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    endOfMonth.setHours(23, 59, 59, 999);
+    
+    const startStr = startOfMonth.toISOString().split('T')[0];
+    const endStr = endOfMonth.toISOString().split('T')[0];
+    
+    return bookings
+      .filter((b) => {
+        const bDate = b.date.includes('T') ? b.date.split('T')[0] : b.date;
+        const isUserBooking = !user || b.userId === user.id;
+        return bDate >= startStr && bDate <= endStr && b.status !== 'cancelled' && isUserBooking;
+      })
+      .sort((a, b) => {
+        if (a.date !== b.date) return a.date.localeCompare(b.date);
+        return a.startTime.localeCompare(b.startTime);
+      });
+  }, [bookings, user?.id]);
+
   return {
     bookings, // User's bookings only (for upcoming list)
     allBookings, // All bookings (for calendar/availability)
