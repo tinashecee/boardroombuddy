@@ -62,13 +62,14 @@ export function CalendarView({ selectedDate, onDateChange, bookingDates }: Calen
   };
 
   const hasBooking = (day: number) => {
-    // Add 1 day to the calendar day when checking against DB dates
-    // This fixes the calendar display offset (Friday bookings showing on Thursday)
-    // Upcoming bookings section uses dates directly from DB, so it stays correct
+    // If Friday bookings are showing on Thursday, we need to add 2 days to fix the offset
+    // When checking Friday on calendar, check if Sunday exists in DB (add 2 days)
+    // This compensates for the timezone offset
     const date = new Date(currentYear, currentMonth, day);
-    date.setDate(date.getDate() + 1); // Add 1 day to match DB date
+    date.setDate(date.getDate() + 2); // Add 2 days to match DB date
     const dbDateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-    // Check if this DB date exists in bookingDates (which are direct from DB, no adjustment)
+    
+    // Check if this DB date exists in bookingDates
     return bookingDates.includes(dbDateStr);
   };
 
