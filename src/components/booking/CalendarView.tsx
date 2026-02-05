@@ -62,10 +62,14 @@ export function CalendarView({ selectedDate, onDateChange, bookingDates }: Calen
   };
 
   const hasBooking = (day: number) => {
-    // Create date string for the calendar day (bookingDates already have +1 day added)
-    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    // bookingDates already have 1 day added, so we can check directly
-    return bookingDates.includes(dateStr);
+    // Add 1 day to the calendar day when checking against DB dates
+    // This fixes the calendar display offset (Friday bookings showing on Thursday)
+    // Upcoming bookings section uses dates directly from DB, so it stays correct
+    const date = new Date(currentYear, currentMonth, day);
+    date.setDate(date.getDate() + 1); // Add 1 day to match DB date
+    const dbDateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    // Check if this DB date exists in bookingDates (which are direct from DB, no adjustment)
+    return bookingDates.includes(dbDateStr);
   };
 
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
