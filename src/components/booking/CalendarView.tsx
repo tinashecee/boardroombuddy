@@ -65,20 +65,19 @@ export function CalendarView({ selectedDate, onDateChange, bookingDates }: Calen
     // Calendar day being checked
     const calendarDateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     
-    // If Friday bookings are showing on Thursday, we need to add 2 days to fix the offset
-    // When checking Friday on calendar, check if Sunday exists in DB (add 2 days)
-    // This compensates for the timezone offset
-    const date = new Date(currentYear, currentMonth, day);
-    date.setDate(date.getDate() + 2); // Add 2 days to match DB date
-    const dbDateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    // Check if this exact calendar date exists in bookingDates
+    // bookingDates now contains dates directly from DB formatted as YYYY-MM-DD
+    const hasMatch = bookingDates.includes(calendarDateStr);
     
     // Debug logs
-    if (bookingDates.includes(dbDateStr)) {
-      console.log(`[CALENDAR] Date from DB for event: ${dbDateStr}, Date showing on calendar: ${calendarDateStr}`);
+    if (hasMatch) {
+      console.log(`[CALENDAR] Date from DB for event: ${calendarDateStr}, Date showing on calendar: ${calendarDateStr}`);
+    } else {
+      // Log when checking but not finding (for debugging)
+      console.log(`[CALENDAR DEBUG] Checking calendar day: ${calendarDateStr}, Available bookingDates:`, bookingDates);
     }
     
-    // Check if this DB date exists in bookingDates
-    return bookingDates.includes(dbDateStr);
+    return hasMatch;
   };
 
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
