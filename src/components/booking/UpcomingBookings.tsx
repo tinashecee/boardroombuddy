@@ -2,6 +2,17 @@ import { Calendar, Clock, Users, Building, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Booking } from '@/types/booking';
 import { cn } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useState } from 'react';
 
 interface UpcomingBookingsProps {
   bookings: Booking[];
@@ -9,6 +20,22 @@ interface UpcomingBookingsProps {
 }
 
 export function UpcomingBookings({ bookings, onCancel }: UpcomingBookingsProps) {
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [bookingToCancel, setBookingToCancel] = useState<string | null>(null);
+
+  const handleCancelClick = (bookingId: string) => {
+    setBookingToCancel(bookingId);
+    setCancelDialogOpen(true);
+  };
+
+  const handleConfirmCancel = () => {
+    if (bookingToCancel) {
+      onCancel(bookingToCancel);
+      setCancelDialogOpen(false);
+      setBookingToCancel(null);
+    }
+  };
+
   const formatTime = (time: string) => {
     const [hours, minutes] = time.split(':');
     const hour = parseInt(hours);
@@ -155,7 +182,7 @@ export function UpcomingBookings({ bookings, onCancel }: UpcomingBookingsProps) 
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                      onClick={() => onCancel(booking.id)}
+                      onClick={() => handleCancelClick(booking.id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -166,6 +193,26 @@ export function UpcomingBookings({ bookings, onCancel }: UpcomingBookingsProps) 
           </div>
         ))}
       </div>
+
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Booking</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel this booking? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Booking</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmCancel}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Cancel Booking
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
