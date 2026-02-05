@@ -45,11 +45,17 @@ export function UpcomingBookings({ bookings, onCancel }: UpcomingBookingsProps) 
   };
 
   const formatDate = (dateStr: string) => {
+    // Log the input to formatDate
+    console.log(`[UPCOMING BOOKINGS FORMAT] Input dateStr: "${dateStr}"`);
+    console.log(`[UPCOMING BOOKINGS FORMAT] Type: ${typeof dateStr}`);
+    
     // Handle date string in YYYY-MM-DD format
     const dateOnly = dateStr.split('T')[0].trim();
+    console.log(`[UPCOMING BOOKINGS FORMAT] After split('T')[0]: "${dateOnly}"`);
     
     // Parse the date components
     const parts = dateOnly.split('-');
+    console.log(`[UPCOMING BOOKINGS FORMAT] Parsed parts:`, parts);
     if (parts.length !== 3) {
       console.error('Invalid date format:', dateStr);
       return dateStr;
@@ -107,6 +113,12 @@ export function UpcomingBookings({ bookings, onCancel }: UpcomingBookingsProps) 
   };
 
   const groupedBookings = bookings.reduce((acc, booking) => {
+    // Log the raw booking object and the date field
+    console.log(`[UPCOMING BOOKINGS DEBUG] Full booking object:`, booking);
+    console.log(`[UPCOMING BOOKINGS DEBUG] Reading field: booking.date`);
+    console.log(`[UPCOMING BOOKINGS DEBUG] Raw value: "${booking.date}"`);
+    console.log(`[UPCOMING BOOKINGS DEBUG] Type: ${typeof booking.date}`);
+    
     const date = booking.date;
     if (!acc[date]) {
       acc[date] = [];
