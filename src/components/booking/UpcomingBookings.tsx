@@ -132,11 +132,14 @@ export function UpcomingBookings({ bookings, onCancel }: UpcomingBookingsProps) 
     <div className="bg-card rounded-xl border border-border p-6 shadow-soft animate-fade-in">
       <h2 className="font-semibold text-lg text-card-foreground mb-4">Upcoming Bookings</h2>
       <div className="space-y-6">
-        {Object.entries(groupedBookings).map(([date, dateBookings]) => (
+        {Object.entries(groupedBookings).map(([date, dateBookings]) => {
+          const displayDate = formatDate(date);
+          console.log(`[UPCOMING BOOKINGS] Booking date from DB: ${date}, Date showing on card: ${displayDate}`);
+          return (
           <div key={date}>
             <div className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
               <Calendar className="h-4 w-4 text-primary" />
-              <span>{formatDate(date)}</span>
+              <span>{displayDate}</span>
             </div>
             <div className="space-y-2">
               {dateBookings.map((booking) => (
@@ -191,7 +194,8 @@ export function UpcomingBookings({ bookings, onCancel }: UpcomingBookingsProps) 
               ))}
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>

@@ -63,7 +63,11 @@ const Index = () => {
 
   // Get dates that have bookings for calendar indicators (use allBookings to show all bookings on calendar)
   // Use dates directly from DB without any adjustment
-  const bookingDates = [...new Set((allBookings || bookings).filter(b => b.status !== 'cancelled').map((b) => b.date))];
+  const bookingDates = [...new Set((allBookings || bookings).filter(b => b.status !== 'cancelled').map((b) => {
+    const dbDate = b.date.includes('T') ? b.date.split('T')[0] : b.date;
+    console.log(`[CALENDAR SETUP] Booking date from DB: ${dbDate}`);
+    return dbDate;
+  }))];
 
   return (
     <div className="min-h-screen bg-background">
