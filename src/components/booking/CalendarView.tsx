@@ -62,11 +62,9 @@ export function CalendarView({ selectedDate, onDateChange, bookingDates }: Calen
   };
 
   const hasBooking = (day: number) => {
-    // Add 2 days to compensate for timezone offset
-    // If events scheduled on Friday show on Thursday, we need to add one more day
-    const date = new Date(currentYear, currentMonth, day);
-    date.setDate(date.getDate() + 2);
-    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    // Create date string for the calendar day (bookingDates already have +1 day added)
+    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    // bookingDates already have 1 day added, so we can check directly
     return bookingDates.includes(dateStr);
   };
 

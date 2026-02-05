@@ -62,7 +62,7 @@ const Index = () => {
   const upcomingBookings = getUpcomingBookings();
 
   // Get dates that have bookings for calendar indicators (use allBookings to show all bookings on calendar)
-  // Add 1 day to each booking date to fix display offset (Friday bookings showing on Thursday)
+  // Add 1 day to each booking date from DB to fix display offset (Friday bookings showing on Thursday)
   const bookingDates = [...new Set((allBookings || bookings)
     .filter(b => b.status !== 'cancelled')
     .map((b) => {
@@ -74,7 +74,7 @@ const Index = () => {
         const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
         const day = parseInt(parts[2], 10);
         const date = new Date(year, month, day);
-        date.setDate(date.getDate() + 1); // Add 1 day
+        date.setDate(date.getDate() + 1); // Add 1 day to shift display forward
         // Format back to YYYY-MM-DD
         const newYear = date.getFullYear();
         const newMonth = String(date.getMonth() + 1).padStart(2, '0');
