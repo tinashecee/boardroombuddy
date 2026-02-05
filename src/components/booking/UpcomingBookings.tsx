@@ -89,10 +89,10 @@ export function UpcomingBookings({ bookings, onCancel }: UpcomingBookingsProps) 
      //// return 'Tomorrow';
    // }
     
-    // Add 1 day to compensate for timezone offset
-    const displayDay = day + 1;
+    // Use the actual day from the date (no adjustment)
+    const displayDay = day;
     
-    // Create date in UTC to avoid timezone shifting (using displayDay for weekday calculation)
+    // Create date in UTC to avoid timezone shifting
     const bookingDate = new Date(Date.UTC(year, month - 1, displayDay, 12, 0, 0));
     
     // Validate the date
@@ -108,7 +108,7 @@ export function UpcomingBookings({ bookings, onCancel }: UpcomingBookingsProps) 
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const monthName = monthNames[month - 1];
     
-    // Format using the day + 1 value
+    // Format using the actual day value
     return `${weekday}, ${monthName} ${displayDay}, ${year}`;
   };
 
