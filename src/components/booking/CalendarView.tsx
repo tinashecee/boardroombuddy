@@ -62,7 +62,12 @@ export function CalendarView({ selectedDate, onDateChange, bookingDates }: Calen
   };
 
   const hasBooking = (day: number) => {
-    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    // Add 1 day to the calendar day when checking against database dates
+    // This compensates for timezone offset - if user sees Feb 5 on calendar,
+    // check if database has Feb 6 (since DB date is one day earlier)
+    const date = new Date(currentYear, currentMonth, day);
+    date.setDate(date.getDate() + 1);
+    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     return bookingDates.includes(dateStr);
   };
 
