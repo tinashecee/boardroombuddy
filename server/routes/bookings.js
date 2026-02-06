@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../db');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const { notifyAdminsNewBooking, notifyUserBookingApproved } = require('../services/emailService');
 
 // Get all bookings (optional: filter by date)
 router.get('/', async (req, res) => {
@@ -135,6 +136,10 @@ router.post('/', async (req, res) => {
     // Extract userId from token (more secure) - but allow override for admin creating on behalf of others
     const bookingUserId = (user.role === 'ADMIN' && userId) ? userId : user.id;
 
+    // Get full user details for email notification
+    const [userDetails] = await db.query('SELECT id, name, email FROM users WHERE id = ?', [bookingUserId]);
+    const bookingUser = userDetails[0];
+
     const id = crypto.randomUUID();
     await db.query(
       'INSERT INTO bookings (id, user_id, organization_name, contact_name, contact_email, booking_date, start_time, end_time, purpose, attendees) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -156,6 +161,11 @@ router.post('/', async (req, res) => {
       status: 'pending',
       createdAt: new Date().toISOString()
     };
+
+    // Send email notification to admins (async, don't wait)
+    notifyAdminsNewBooking(booking, bookingUser).catch(err => {
+      console.error('Failed to send admin notification email:', err);
+    });
     
     res.status(201).json(booking);
   } catch (error) {
@@ -253,8 +263,11 @@ router.patch('/:id/status', async (req, res) => {
       return res.status(401).json({ message: 'User not found' });
     }
 
-    // Get the booking to check ownership
-    const [bookings] = await db.query('SELECT user_id FROM bookings WHERE id = ?', [id]);
+    // Get the booking to check ownership and get full booking details
+    const [bookings] = await db.query(
+      'SELECT * FROM bookings WHERE id = ?', 
+      [id]
+    );
     const booking = bookings[0];
 
     if (!booking) {
@@ -272,6 +285,28 @@ router.patch('/:id/status', async (req, res) => {
     } else if (isAdmin) {
       // Admins can set any status
       await db.query('UPDATE bookings SET status = ? WHERE id = ?', [status, id]);
+      
+      // If booking is being approved (confirmed), send confirmation email to user
+      if (status === 'confirmed') {
+        const bookingForEmail = {
+          id: booking.id,
+          userId: booking.user_id,
+          organizationName: booking.organization_name,
+          contactName: booking.contact_name,
+          contactEmail: booking.contact_email,
+          date: booking.booking_date,
+          startTime: booking.start_time.substring(0, 5),
+          endTime: booking.end_time.substring(0, 5),
+          purpose: booking.purpose || '',
+          attendees: booking.attendees,
+        };
+        
+        // Send email notification to user (async, don't wait)
+        notifyUserBookingApproved(bookingForEmail).catch(err => {
+          console.error('Failed to send booking confirmation email:', err);
+        });
+      }
+      
       res.json({ message: `Booking status updated to ${status}` });
     } else {
       // Non-admins can only cancel their own bookings

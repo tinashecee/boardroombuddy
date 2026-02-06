@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Footer } from "@/components/booking/Footer";
 import {
     Card,
@@ -116,6 +116,14 @@ const Auth = () => {
                                             onChange={(e) => setPassword(e.target.value)}
                                             className="bg-muted/50"
                                         />
+                                    </div>
+                                    <div className="flex items-center justify-end">
+                                        <Link
+                                            to="/forgot-password"
+                                            className="text-sm text-primary hover:underline"
+                                        >
+                                            Forgot password?
+                                        </Link>
                                     </div>
                                     <Button type="submit" className="w-full h-11" disabled={isLoading}>
                                         {isLoading ? "Signing in..." : "Sign In"}
