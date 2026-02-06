@@ -5,7 +5,7 @@ const pool = mysql.createPool({
   host: process.env.DB_HOST,
   user: 'boardroomlocaluser',
   password: '@Soxfort2025##',
-  database: process.env.DB_NAME,
+  database: 'boardroom_buddy_db',
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
@@ -16,7 +16,7 @@ console.log({
   host: process.env.DB_HOST,
   user: 'boardroomlocaluser',
   password: '@Soxfort2025##',
-  database: process.env.DB_NAME
+  database: 'boardroom_buddy_db'
 });
 // Test connection
 pool.getConnection((err, connection) => {
