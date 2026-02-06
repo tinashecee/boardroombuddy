@@ -14,7 +14,7 @@ const pool = mysql.createPool({
 const promisePool = pool.promise();
 console.log({
   host: process.env.DB_HOST,
-  user: process.env.DB_USER,
+  user: 'labpartnersuser',
   password: '@Soxfort2025##',
   database: process.env.DB_NAME
 });
