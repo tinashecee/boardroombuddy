@@ -15,9 +15,11 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { Check, X, Clock, Users, CalendarCheck } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Check, X, Clock, Users, CalendarCheck, UserCog } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
+import { UserManagement } from "./UserManagement";
 
 interface PendingUser {
     id: string;
@@ -112,7 +114,24 @@ export const AdminPanel = () => {
                 </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8">
+            <Tabs defaultValue="approvals" className="w-full">
+                <TabsList className="grid w-full max-w-md grid-cols-3">
+                    <TabsTrigger value="approvals" className="gap-2">
+                        <Users className="h-4 w-4" />
+                        Account Approvals
+                    </TabsTrigger>
+                    <TabsTrigger value="bookings" className="gap-2">
+                        <CalendarCheck className="h-4 w-4" />
+                        Booking Requests
+                    </TabsTrigger>
+                    <TabsTrigger value="users" className="gap-2">
+                        <UserCog className="h-4 w-4" />
+                        User Management
+                    </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="approvals" className="mt-6">
+                    <div className="grid md:grid-cols-1 gap-8">
                 {/* User Management */}
                 <Card className="flex flex-col shadow-sm border-muted-foreground/10">
                     <CardHeader className="bg-muted/30 pb-4">
@@ -185,7 +204,11 @@ export const AdminPanel = () => {
                         )}
                     </CardContent>
                 </Card>
+                    </div>
+                </TabsContent>
 
+                <TabsContent value="bookings" className="mt-6">
+                    <div className="grid md:grid-cols-1 gap-8">
                 {/* Booking Management */}
                 <Card className="flex flex-col shadow-sm border-muted-foreground/10">
                     <CardHeader className="bg-muted/30 pb-4">
@@ -262,7 +285,13 @@ export const AdminPanel = () => {
                         )}
                     </CardContent>
                 </Card>
-            </div>
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="users" className="mt-6">
+                    <UserManagement />
+                </TabsContent>
+            </Tabs>
         </div>
     );
 };

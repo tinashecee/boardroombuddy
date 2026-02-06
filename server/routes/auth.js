@@ -174,4 +174,101 @@ router.delete('/users/:id', async (req, res) => {
   }
 });
 
+// Get all users (admin only)
+router.get('/users', async (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ message: 'No token provided' });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Check if user is admin
+    const [users] = await db.query('SELECT role FROM users WHERE id = ?', [decoded.id]);
+    if (!users[0] || users[0].role !== 'ADMIN') {
+      return res.status(403).json({ message: 'Admin access required' });
+    }
+
+    // Get all users (excluding password_hash)
+    const [allUsers] = await db.query(
+      'SELECT id, name, email, company_name as companyName, role, is_approved, created_at FROM users ORDER BY created_at DESC'
+    );
+    
+    res.json(allUsers);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error fetching users' });
+  }
+});
+
+// Update user (admin only)
+router.patch('/users/:id', async (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ message: 'No token provided' });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Check if user is admin
+    const [users] = await db.query('SELECT role FROM users WHERE id = ?', [decoded.id]);
+    if (!users[0] || users[0].role !== 'ADMIN') {
+      return res.status(403).json({ message: 'Admin access required' });
+    }
+
+    const { id } = req.params;
+    const { name, email, companyName, role, isApproved } = req.body;
+
+    // Build update query dynamically based on provided fields
+    const updates = [];
+    const values = [];
+
+    if (name !== undefined) {
+      updates.push('name = ?');
+      values.push(name);
+    }
+    if (email !== undefined) {
+      updates.push('email = ?');
+      values.push(email);
+    }
+    if (companyName !== undefined) {
+      updates.push('company_name = ?');
+      values.push(companyName);
+    }
+    if (role !== undefined) {
+      // Validate role
+      if (!['ADMIN', 'USER'].includes(role)) {
+        return res.status(400).json({ message: 'Invalid role. Must be ADMIN or USER' });
+      }
+      updates.push('role = ?');
+      values.push(role);
+    }
+    if (isApproved !== undefined) {
+      updates.push('is_approved = ?');
+      values.push(isApproved);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ message: 'No fields to update' });
+    }
+
+    values.push(id);
+    const query = `UPDATE users SET ${updates.join(', ')} WHERE id = ?`;
+    
+    await db.query(query, values);
+
+    // Return updated user
+    const [updatedUsers] = await db.query(
+      'SELECT id, name, email, company_name as companyName, role, is_approved, created_at FROM users WHERE id = ?',
+      [id]
+    );
+
+    res.json({ message: 'User updated successfully', user: updatedUsers[0] });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ message: 'Email already in use' });
+    }
+    console.error(error);
+    res.status(500).json({ message: 'Error updating user' });
+  }
+});
+
 module.exports = router;
