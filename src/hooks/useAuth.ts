@@ -24,11 +24,20 @@ export function useAuth() {
         const userData = await response.json();
         setUser(userData);
       } else {
+        // Token is invalid or expired, clear it
         localStorage.removeItem('bb_token');
         setUser(null);
       }
     } catch (error) {
-      console.error('Failed to fetch current user', error);
+      // Silently handle connection errors - server might be down or user might be offline
+      // Only log if it's not a connection error (which is expected when server is down)
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        // Connection error - server might be down, silently handle
+        localStorage.removeItem('bb_token');
+        setUser(null);
+      } else {
+        console.error('Failed to fetch current user', error);
+      }
     } finally {
       setIsLoading(false);
     }
