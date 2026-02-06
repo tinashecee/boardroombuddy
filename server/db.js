@@ -3,7 +3,7 @@ require('dotenv').config();
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
-  user: 'labpartnersuser',
+  user: 'boardroomlocaluser',
   password: '@Soxfort2025##',
   database: process.env.DB_NAME,
   waitForConnections: true,
@@ -14,7 +14,7 @@ const pool = mysql.createPool({
 const promisePool = pool.promise();
 console.log({
   host: process.env.DB_HOST,
-  user: 'labpartnersuser',
+  user: 'boardroomlocaluser',
   password: '@Soxfort2025##',
   database: process.env.DB_NAME
 });
