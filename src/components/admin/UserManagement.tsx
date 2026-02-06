@@ -45,7 +45,7 @@ interface User {
     created_at: string;
 }
 
-const API_URL = 'http://161.97.183.92:5000/api/auth';
+const API_URL = '/api/auth';
 
 export const UserManagement = () => {
     const [users, setUsers] = useState<User[]>([]);

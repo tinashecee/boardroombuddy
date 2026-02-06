@@ -28,7 +28,7 @@ interface PendingUser {
     companyName: string;
 }
 
-const API_URL = 'http://161.97.183.92:5000/api/auth';
+const API_URL = '/api/auth';
 
 export const AdminPanel = () => {
     const { bookings, approveBooking, rejectBooking } = useBookings();

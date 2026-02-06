@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { Booking, BookingFormData, TIME_SLOTS } from '@/types/booking';
 import { useAuth } from './useAuth';
 
-const API_URL = 'http://161.97.183.92:5000/api/bookings';
+const API_URL = '/api/bookings';
 
 export function useBookings() {
   const { user } = useAuth();

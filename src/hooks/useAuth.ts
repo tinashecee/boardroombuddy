@@ -9,7 +9,7 @@ export interface User {
   isApproved: boolean;
 }
 
-const API_URL = 'http://161.97.183.92:5000/api/auth';
+const API_URL = '/api/auth';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);

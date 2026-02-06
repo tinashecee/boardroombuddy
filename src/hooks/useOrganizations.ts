@@ -5,7 +5,7 @@ export interface Organization {
     name: string;
 }
 
-const API_URL = 'http://161.97.183.92:5000/api/organizations';
+const API_URL = '/api/organizations';
 
 export function useOrganizations() {
     const [organizations, setOrganizations] = useState<Organization[]>([]);

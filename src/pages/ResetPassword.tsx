@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Building2, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
-const API_URL = 'http://161.97.183.92:5000/api/auth';
+const API_URL = '/api/auth';
 
 const ResetPassword = () => {
     const navigate = useNavigate();
