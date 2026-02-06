@@ -4,7 +4,15 @@ const db = require('../db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { sendPasswordResetEmail } = require('../services/emailService');
+
+// Import email service (optional - won't crash if nodemailer not installed)
+let emailService;
+try {
+  emailService = require('../services/emailService');
+} catch (error) {
+  console.warn('Email service not available:', error.message);
+  emailService = null;
+}
 
 // Signup
 router.post('/signup', async (req, res) => {
@@ -312,12 +320,16 @@ router.post('/forgot-password', async (req, res) => {
     const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:8080'}/reset-password?token=${resetToken}`;
     
     // Send email with reset link
-    try {
-      await sendPasswordResetEmail(user.email, resetLink);
-      console.log(`Password reset email sent to ${user.email}`);
-    } catch (emailError) {
-      console.error('Error sending password reset email:', emailError);
-      // Still return success to user (security best practice)
+    if (emailService && emailService.sendPasswordResetEmail) {
+      try {
+        await emailService.sendPasswordResetEmail(user.email, resetLink);
+        console.log(`Password reset email sent to ${user.email}`);
+      } catch (emailError) {
+        console.error('Error sending password reset email:', emailError);
+        // Still return success to user (security best practice)
+      }
+    } else {
+      console.log('Email service not available - password reset link:', resetLink);
     }
 
     res.json({ 

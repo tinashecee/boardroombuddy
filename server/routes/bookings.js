@@ -3,7 +3,15 @@ const router = express.Router();
 const db = require('../db');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { notifyAdminsNewBooking, notifyUserBookingApproved } = require('../services/emailService');
+
+// Import email service (optional - won't crash if nodemailer not installed)
+let emailService;
+try {
+  emailService = require('../services/emailService');
+} catch (error) {
+  console.warn('Email service not available:', error.message);
+  emailService = null;
+}
 
 // Get all bookings (optional: filter by date)
 router.get('/', async (req, res) => {
@@ -163,9 +171,11 @@ router.post('/', async (req, res) => {
     };
 
     // Send email notification to admins (async, don't wait)
-    notifyAdminsNewBooking(booking, bookingUser).catch(err => {
-      console.error('Failed to send admin notification email:', err);
-    });
+    if (emailService && emailService.notifyAdminsNewBooking) {
+      emailService.notifyAdminsNewBooking(booking, bookingUser).catch(err => {
+        console.error('Failed to send admin notification email:', err);
+      });
+    }
     
     res.status(201).json(booking);
   } catch (error) {
@@ -287,7 +297,7 @@ router.patch('/:id/status', async (req, res) => {
       await db.query('UPDATE bookings SET status = ? WHERE id = ?', [status, id]);
       
       // If booking is being approved (confirmed), send confirmation email to user
-      if (status === 'confirmed') {
+      if (status === 'confirmed' && emailService && emailService.notifyUserBookingApproved) {
         const bookingForEmail = {
           id: booking.id,
           userId: booking.user_id,
@@ -302,7 +312,7 @@ router.patch('/:id/status', async (req, res) => {
         };
         
         // Send email notification to user (async, don't wait)
-        notifyUserBookingApproved(bookingForEmail).catch(err => {
+        emailService.notifyUserBookingApproved(bookingForEmail).catch(err => {
           console.error('Failed to send booking confirmation email:', err);
         });
       }

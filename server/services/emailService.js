@@ -1,18 +1,32 @@
-const nodemailer = require('nodemailer');
+let nodemailer;
+let transporter;
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: "labpartnerswebportal@gmail.com",
-    pass: "aafennaorjosxifq",
-  },
-});
+try {
+  nodemailer = require('nodemailer');
+  transporter = nodemailer.createTransport({
+    service: "gmail",
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    auth: {
+      user: "labpartnerswebportal@gmail.com",
+      pass: "aafennaorjosxifq",
+    },
+  });
+  console.log('✅ Email service initialized');
+} catch (error) {
+  console.warn('⚠️  Nodemailer not found. Email functionality will be disabled.');
+  console.warn('   Install with: npm install nodemailer');
+  transporter = null;
+}
 
 // Send email to admins when a booking is created
 async function notifyAdminsNewBooking(booking, user) {
+  if (!transporter) {
+    console.log('Email service not available - skipping admin notification');
+    return;
+  }
+  
   try {
     // Get all admin emails
     const db = require('../db');
@@ -74,6 +88,11 @@ async function notifyAdminsNewBooking(booking, user) {
 
 // Send confirmation email to user when booking is approved
 async function notifyUserBookingApproved(booking) {
+  if (!transporter) {
+    console.log('Email service not available - skipping booking confirmation');
+    return;
+  }
+  
   try {
     // Get user details
     const db = require('../db');
@@ -135,6 +154,11 @@ async function notifyUserBookingApproved(booking) {
 
 // Send password reset email
 async function sendPasswordResetEmail(email, resetLink) {
+  if (!transporter) {
+    console.log('Email service not available - cannot send password reset email');
+    throw new Error('Email service not configured. Please install nodemailer.');
+  }
+  
   try {
     const mailOptions = {
       from: '"Boardroom Buddy" <labpartnerswebportal@gmail.com>',
