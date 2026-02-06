@@ -50,6 +50,9 @@ async function notifyAdminsNewBooking(booking, user) {
       day: 'numeric'
     });
 
+    const baseUrl = process.env.FRONTEND_URL || 'http://161.97.183.92:8080';
+    const adminLoginUrl = `${baseUrl}/auth`;
+
     const mailOptions = {
       from: '"Boardroom Buddy" <labpartnerswebportal@gmail.com>',
       to: adminEmails,
@@ -71,8 +74,16 @@ async function notifyAdminsNewBooking(booking, user) {
             <p><strong>Booked by:</strong> ${user.name} (${user.email})</p>
           </div>
           
-          <p style="color: #6b7280; font-size: 14px;">
-            Please log in to the admin panel to approve or reject this booking request.
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${adminLoginUrl}" 
+               style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600;">
+              Log In to Approve Booking
+            </a>
+          </div>
+          
+          <p style="color: #6b7280; font-size: 14px; text-align: center;">
+            Or copy and paste this link into your browser:<br>
+            <a href="${adminLoginUrl}" style="color: #2563eb; word-break: break-all;">${adminLoginUrl}</a>
           </p>
         </div>
       `,
