@@ -33,11 +33,15 @@ router.post('/signup', async (req, res) => {
       user: { id: userId, name, email, companyName, role, isApproved } 
     });
   } catch (error) {
+    console.error('Signup error:', error);
     if (error.code === 'ER_DUP_ENTRY') {
       return res.status(400).json({ message: 'Email already registered' });
     }
-    console.error(error);
-    res.status(500).json({ message: 'Error creating user' });
+    // Ensure we always send a JSON response
+    return res.status(500).json({ 
+      message: 'Error creating user',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 

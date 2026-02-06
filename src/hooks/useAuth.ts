@@ -82,16 +82,27 @@ export function useAuth() {
         body: JSON.stringify({ name, email, companyName, password }),
       });
 
+      // Check if response has content before parsing JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response:', text);
+        return { success: false, error: `Server error: ${response.status} ${response.statusText}` };
+      }
+
       const data = await response.json();
       if (response.ok) {
         // Don't store token or set user - user must wait for approval
         // The user will need to log in after admin approval
         return { success: true, message: data.message };
       } else {
-        return { success: false, error: data.message };
+        return { success: false, error: data.message || 'Signup failed' };
       }
     } catch (error) {
       console.error('Signup error:', error);
+      if (error instanceof SyntaxError) {
+        return { success: false, error: 'Server returned invalid response. Please check server logs.' };
+      }
       return { success: false, error: 'Connection failed' };
     }
   }, []);
