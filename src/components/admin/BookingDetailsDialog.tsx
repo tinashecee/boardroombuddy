@@ -128,8 +128,8 @@ export function BookingDetailsDialog({ booking, open, onOpenChange }: BookingDet
                   <p className="text-sm font-medium">Time</p>
                   <p className="text-sm text-muted-foreground">
                     {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
-                    {booking.durationHours && (
-                      <span className="ml-2 text-xs">({booking.durationHours.toFixed(2)} hours)</span>
+                    {booking.durationHours != null && (
+                      <span className="ml-2 text-xs">({Number(booking.durationHours).toFixed(2)} hours)</span>
                     )}
                   </p>
                 </div>
@@ -258,11 +258,11 @@ export function BookingDetailsDialog({ booking, open, onOpenChange }: BookingDet
                     </p>
                   </div>
                 )}
-                {booking.durationHours && (
+                {booking.durationHours != null && (
                   <div>
                     <p className="text-sm font-medium">Duration</p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {booking.durationHours.toFixed(2)} hours
+                      {Number(booking.durationHours).toFixed(2)} hours
                     </p>
                   </div>
                 )}
