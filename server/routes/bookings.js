@@ -42,15 +42,30 @@ function timeToMinutes(timeStr) {
 }
 
 // Helper to determine booking type based on tenant free hours
+// Only "Lab Partners" organization is exempt from paying (gets free hours)
+// All other organizations must pay (hire)
 async function determineBookingType(organizationName, durationHours) {
   if (!organizationName || !durationHours) return 'HIRE';
 
+  // Normalize organization name for comparison (case-insensitive, trim whitespace)
+  const normalizedOrgName = organizationName.trim();
+  
+  // Only "Lab Partners" is exempt from paying
+  // Check if this is the Lab Partners organization
+  if (normalizedOrgName.toLowerCase() !== 'lab partners') {
+    return 'HIRE';
+  }
+
+  // For Lab Partners, check their free hours allocation
   const [orgs] = await db.query(
-    'SELECT is_tenant, monthly_free_hours, used_free_hours_this_month FROM organizations WHERE name = ?',
-    [organizationName]
+    'SELECT is_tenant, monthly_free_hours, used_free_hours_this_month FROM organizations WHERE LOWER(TRIM(name)) = ?',
+    [normalizedOrgName.toLowerCase()]
   );
 
   const org = orgs[0];
+  
+  // If Lab Partners org doesn't exist in DB or is not marked as tenant, default to HIRE
+  // (Admin should configure Lab Partners as tenant with monthly_free_hours)
   if (!org || !org.is_tenant) {
     return 'HIRE';
   }
@@ -59,6 +74,7 @@ async function determineBookingType(organizationName, durationHours) {
   const usedThisMonth = Number(org.used_free_hours_this_month || 0);
   const remaining = monthlyFree - usedThisMonth;
 
+  // If Lab Partners has remaining free hours, use them; otherwise charge (HIRE)
   return remaining >= durationHours ? 'FREE_HOURS' : 'HIRE';
 }
 
@@ -462,7 +478,8 @@ router.post('/apply-free-hours', async (req, res) => {
       return res.status(403).json({ message: 'Only admins can apply free hours' });
     }
 
-    // Aggregate duration_hours for tenant organizations from past confirmed bookings
+    // Aggregate duration_hours for Lab Partners organization from past confirmed bookings
+    // Only "Lab Partners" is exempt from paying (gets free hours)
     await db.query(
       `UPDATE organizations o
        JOIN (
@@ -472,13 +489,15 @@ router.post('/apply-free-hours', async (req, res) => {
            AND booking_date < CURDATE()
            AND free_hours_applied = FALSE
            AND duration_hours IS NOT NULL
+           AND LOWER(TRIM(organization_name)) = 'lab partners'
          GROUP BY organization_name
-       ) b ON b.organization_name = o.name
+       ) b ON LOWER(TRIM(b.organization_name)) = LOWER(TRIM(o.name))
        SET o.used_free_hours_this_month = o.used_free_hours_this_month + b.used_hours
-       WHERE o.is_tenant = TRUE`
+       WHERE LOWER(TRIM(o.name)) = 'lab partners' AND o.is_tenant = TRUE`
     );
 
     // Mark those bookings as applied so they are not counted twice
+    // Only for Lab Partners organization
     await db.query(
       `UPDATE bookings
        SET free_hours_applied = TRUE
@@ -486,9 +505,7 @@ router.post('/apply-free-hours', async (req, res) => {
          AND booking_date < CURDATE()
          AND free_hours_applied = FALSE
          AND duration_hours IS NOT NULL
-         AND organization_name IN (
-           SELECT name FROM organizations WHERE is_tenant = TRUE
-         )`
+         AND LOWER(TRIM(organization_name)) = 'lab partners'`
     );
 
     res.json({ message: 'Free hours applied for past confirmed bookings' });
