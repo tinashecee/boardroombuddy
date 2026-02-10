@@ -16,11 +16,13 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, X, Clock, Users, CalendarCheck, UserCog } from "lucide-react";
+import { Check, X, Clock, Users, CalendarCheck, UserCog, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { UserManagement } from "./UserManagement";
 import { AdminOrganizations } from "./AdminOrganizations";
+import { BookingDetailsDialog } from "./BookingDetailsDialog";
+import { Booking } from "@/types/booking";
 
 interface PendingUser {
     id: string;
@@ -35,6 +37,8 @@ export const AdminPanel = () => {
     const { bookings, approveBooking, rejectBooking } = useBookings();
     const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
     const [isLoadingUsers, setIsLoadingUsers] = useState(true);
+    const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+    const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
 
     useEffect(() => {
         fetchPendingUsers();
@@ -260,6 +264,18 @@ export const AdminPanel = () => {
                                             <TableCell className="text-right">
                                                 <div className="flex justify-end gap-2">
                                                     <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8"
+                                                        onClick={() => {
+                                                            setSelectedBooking(booking);
+                                                            setIsDetailsDialogOpen(true);
+                                                        }}
+                                                        title="View Details"
+                                                    >
+                                                        <Eye className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button
                                                         variant="outline"
                                                         size="icon"
                                                         className="h-8 w-8 text-destructive hover:bg-destructive/10"
@@ -301,6 +317,12 @@ export const AdminPanel = () => {
                     <AdminOrganizations />
                 </TabsContent>
             </Tabs>
+
+            <BookingDetailsDialog
+                booking={selectedBooking}
+                open={isDetailsDialogOpen}
+                onOpenChange={setIsDetailsDialogOpen}
+            />
         </div>
     );
 };
