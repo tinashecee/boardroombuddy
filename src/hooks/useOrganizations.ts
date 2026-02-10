@@ -3,6 +3,10 @@ import { useState, useEffect } from 'react';
 export interface Organization {
     id: string;
     name: string;
+    is_tenant?: boolean;
+    monthly_free_hours?: number;
+    used_free_hours_this_month?: number;
+    billing_rate_per_hour?: number | null;
 }
 
 const API_URL = '/api/organizations';
@@ -46,6 +50,26 @@ export function useOrganizations() {
         }
     };
 
+    const updateOrganization = async (
+        id: string,
+        updates: Partial<Pick<Organization, 'name' | 'is_tenant' | 'monthly_free_hours' | 'used_free_hours_this_month' | 'billing_rate_per_hour'>>
+    ) => {
+        try {
+            const response = await fetch(`${API_URL}/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updates),
+            });
+            if (!response.ok) throw new Error('Failed to update organization');
+            const updated = await response.json();
+            setOrganizations(prev => prev.map(org => (org.id === id ? updated : org)));
+            return updated as Organization;
+        } catch (error) {
+            console.error('Error updating organization:', error);
+            throw error;
+        }
+    };
+
     const deleteOrganization = async (id: string) => {
         try {
             const response = await fetch(`${API_URL}/${id}`, {
@@ -59,5 +83,5 @@ export function useOrganizations() {
         }
     };
 
-    return { organizations, isLoading, addOrganization, deleteOrganization };
+    return { organizations, isLoading, addOrganization, updateOrganization, deleteOrganization };
 }

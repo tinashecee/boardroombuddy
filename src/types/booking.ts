@@ -4,11 +4,22 @@ export interface Booking {
   organizationName: string;
   contactName: string;
   contactEmail: string;
+  contactPhone?: string;
   date: string; // ISO date string YYYY-MM-DD
   startTime: string; // HH:MM format
   endTime: string; // HH:MM format
   purpose: string;
   attendees: number;
+  attendanceType?: 'INTERNAL' | 'EXTERNAL';
+  needsDisplayScreen?: boolean;
+  needsVideoConferencing?: boolean;
+  needsProjector?: boolean;
+  needsWhiteboard?: boolean;
+  needsConferencePhone?: boolean;
+  needsExtensionPower?: boolean;
+  cateringOption?: 'NONE' | 'TEA_COFFEE_WATER' | 'LIGHT_SNACKS';
+  bookingType?: 'FREE_HOURS' | 'HIRE';
+  durationHours?: number | null;
   status: 'confirmed' | 'pending' | 'cancelled';
   createdAt: string;
 }
@@ -23,11 +34,15 @@ export interface BookingFormData {
   organizationName: string;
   contactName: string;
   contactEmail: string;
+  contactPhone: string;
   date: string;
   startTime: string;
   endTime: string;
   purpose: string;
   attendees: number;
+  attendanceType: 'INTERNAL' | 'EXTERNAL';
+  equipment: string[]; // e.g. ['display_screen', 'projector']
+  cateringOption: 'NONE' | 'TEA_COFFEE_WATER' | 'LIGHT_SNACKS';
 }
 
 export const BUSINESS_HOURS = {

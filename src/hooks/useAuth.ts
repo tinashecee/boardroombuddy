@@ -36,7 +36,7 @@ export function useAuth() {
         localStorage.removeItem('bb_token');
         setUser(null);
       } else {
-        console.error('Failed to fetch current user', error);
+      console.error('Failed to fetch current user', error);
       }
     } finally {
       setIsLoading(false);

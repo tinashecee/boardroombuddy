@@ -33,11 +33,15 @@ export function BookingForm({ selectedDate, initialStartTime, onSubmit, onClose 
     organizationName: user?.companyName || '',
     contactName: user?.name || '',
     contactEmail: user?.email || '',
+    contactPhone: '',
     date: formatDateLocal(selectedDate),
     startTime: initialStartTime || '09:00',
     endTime: getDefaultEndTime(initialStartTime || '09:00'),
     purpose: '',
     attendees: 1,
+    attendanceType: 'INTERNAL',
+    equipment: [],
+    cateringOption: 'NONE',
   });
 
   const [error, setError] = useState<string | null>(null);
@@ -61,13 +65,13 @@ export function BookingForm({ selectedDate, initialStartTime, onSubmit, onClose 
 
     try {
       const result = await onSubmit(formData);
-      if (result.success) {
-        setSuccess(true);
-        setTimeout(() => {
-          onClose();
-        }, 1500);
-      } else {
-        setError(result.error || 'Failed to create booking');
+    if (result.success) {
+      setSuccess(true);
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+    } else {
+      setError(result.error || 'Failed to create booking');
       }
     } catch (error) {
       setError('Failed to create booking. Please try again.');
@@ -169,25 +173,23 @@ export function BookingForm({ selectedDate, initialStartTime, onSubmit, onClose 
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="organizationName">Organization Name</Label>
-            <Select
-              value={formData.organizationName}
-              onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, organizationName: value }))
-              }
+            <Label htmlFor="organizationName">Organization / Company Name</Label>
+            <Input
+              id="organizationName"
               required
-            >
-              <SelectTrigger id="organizationName">
-                <SelectValue placeholder="Select an organization" />
-              </SelectTrigger>
-              <SelectContent>
-                {organizations.map((org) => (
-                  <SelectItem key={org.id} value={org.name}>
-                    {org.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder="Type organization or company name"
+              list="known-organizations"
+              value={formData.organizationName}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, organizationName: e.target.value }))
+              }
+            />
+            {/* Datatalist gives suggestions but still allows free typing */}
+            <datalist id="known-organizations">
+              {organizations.map((org) => (
+                <option key={org.id} value={org.name} />
+              ))}
+            </datalist>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -210,6 +212,108 @@ export function BookingForm({ selectedDate, initialStartTime, onSubmit, onClose 
                 onChange={(e) => setFormData((prev) => ({ ...prev, contactEmail: e.target.value }))}
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="contactPhone">Contact Phone</Label>
+            <Input
+              id="contactPhone"
+              required
+              placeholder="Contact phone number"
+              value={formData.contactPhone}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, contactPhone: e.target.value }))
+              }
+            />
+          </div>
+
+          <div className="space-y-3">
+            <Label>Attendance Type</Label>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant={formData.attendanceType === 'INTERNAL' ? 'default' : 'outline'}
+                className="flex-1"
+                onClick={() =>
+                  setFormData((prev) => ({ ...prev, attendanceType: 'INTERNAL' }))
+                }
+              >
+                Internal (BMH)
+              </Button>
+              <Button
+                type="button"
+                variant={formData.attendanceType === 'EXTERNAL' ? 'default' : 'outline'}
+                className="flex-1"
+                onClick={() =>
+                  setFormData((prev) => ({ ...prev, attendanceType: 'EXTERNAL' }))
+                }
+              >
+                External
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <Label>Required Equipment</Label>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              {[
+                { key: 'display_screen', label: 'Display screen' },
+                { key: 'video_conferencing', label: 'Video conferencing' },
+                { key: 'projector', label: 'Projector' },
+                { key: 'whiteboard', label: 'Whiteboard' },
+                { key: 'conference_phone', label: 'Conference phone' },
+                { key: 'extension_power', label: 'Extension power' },
+              ].map((item) => {
+                const selected = formData.equipment.includes(item.key);
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    className={`flex items-center justify-between rounded-md border px-3 py-2 ${
+                      selected ? 'border-primary bg-primary/5' : 'border-border'
+                    }`}
+                    onClick={() =>
+                      setFormData((prev) => {
+                        const exists = prev.equipment.includes(item.key);
+                        return {
+                          ...prev,
+                          equipment: exists
+                            ? prev.equipment.filter((k) => k !== item.key)
+                            : [...prev.equipment, item.key],
+                        };
+                      })
+                    }
+                  >
+                    <span>{item.label}</span>
+                    {selected && <CheckCircle2 className="h-4 w-4 text-primary" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Catering & Refreshments</Label>
+            <Select
+              value={formData.cateringOption}
+              onValueChange={(value) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  cateringOption: value as BookingFormData['cateringOption'],
+                }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select catering option" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="NONE">None</SelectItem>
+                <SelectItem value="TEA_COFFEE_WATER">Tea/Coffee and water only</SelectItem>
+                <SelectItem value="LIGHT_SNACKS">
+                  Light (Snacks) catering (Approval required)
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">

@@ -20,6 +20,7 @@ import { Check, X, Clock, Users, CalendarCheck, UserCog } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { UserManagement } from "./UserManagement";
+import { AdminOrganizations } from "./AdminOrganizations";
 
 interface PendingUser {
     id: string;
@@ -72,8 +73,8 @@ export const AdminPanel = () => {
             });
             
             if (response.ok) {
-                setPendingUsers((prev) => prev.filter((u) => u.id !== userId));
-                toast.success("User account approved!");
+        setPendingUsers((prev) => prev.filter((u) => u.id !== userId));
+        toast.success("User account approved!");
             } else {
                 toast.error("Failed to approve user");
             }
@@ -92,8 +93,8 @@ export const AdminPanel = () => {
             });
             
             if (response.ok) {
-                setPendingUsers((prev) => prev.filter((u) => u.id !== userId));
-                toast.error("User account rejected");
+        setPendingUsers((prev) => prev.filter((u) => u.id !== userId));
+        toast.error("User account rejected");
             } else {
                 toast.error("Failed to reject user");
             }
@@ -115,7 +116,7 @@ export const AdminPanel = () => {
             </div>
 
             <Tabs defaultValue="approvals" className="w-full">
-                <TabsList className="grid w-full max-w-md grid-cols-3">
+                <TabsList className="grid w-full max-w-xl grid-cols-4">
                     <TabsTrigger value="approvals" className="gap-2">
                         <Users className="h-4 w-4" />
                         Account Approvals
@@ -127,6 +128,10 @@ export const AdminPanel = () => {
                     <TabsTrigger value="users" className="gap-2">
                         <UserCog className="h-4 w-4" />
                         User Management
+                    </TabsTrigger>
+                    <TabsTrigger value="organizations" className="gap-2">
+                        <Users className="h-4 w-4" />
+                        Organizations
                     </TabsTrigger>
                 </TabsList>
 
@@ -285,11 +290,15 @@ export const AdminPanel = () => {
                         )}
                     </CardContent>
                 </Card>
-                    </div>
+            </div>
                 </TabsContent>
 
                 <TabsContent value="users" className="mt-6">
                     <UserManagement />
+                </TabsContent>
+
+                <TabsContent value="organizations" className="mt-6">
+                    <AdminOrganizations />
                 </TabsContent>
             </Tabs>
         </div>
