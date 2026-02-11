@@ -19,10 +19,12 @@ app.get('/health', (req, res) => {
 const authRoutes = require('./routes/auth');
 const orgRoutes = require('./routes/organizations');
 const bookingRoutes = require('./routes/bookings');
+const reportsRoutes = require('./routes/reports');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/organizations', orgRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/reports', reportsRoutes);
 
 // Global error handler middleware
 app.use((err, req, res, next) => {

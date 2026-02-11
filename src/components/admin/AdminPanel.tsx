@@ -16,9 +16,10 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, X, Clock, Users, CalendarCheck, UserCog, Eye } from "lucide-react";
+import { Check, X, Clock, Users, CalendarCheck, UserCog, Eye, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { UserManagement } from "./UserManagement";
 import { AdminOrganizations } from "./AdminOrganizations";
 import { BookingDetailsDialog } from "./BookingDetailsDialog";
@@ -34,6 +35,7 @@ interface PendingUser {
 const API_URL = '/api/auth';
 
 export const AdminPanel = () => {
+    const navigate = useNavigate();
     const { bookings, approveBooking, rejectBooking } = useBookings();
     const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
     const [isLoadingUsers, setIsLoadingUsers] = useState(true);
@@ -120,7 +122,7 @@ export const AdminPanel = () => {
             </div>
 
             <Tabs defaultValue="approvals" className="w-full">
-                <TabsList className="grid w-full max-w-xl grid-cols-4">
+                <TabsList className="grid w-full max-w-2xl grid-cols-5">
                     <TabsTrigger value="approvals" className="gap-2">
                         <Users className="h-4 w-4" />
                         Account Approvals
@@ -136,6 +138,10 @@ export const AdminPanel = () => {
                     <TabsTrigger value="organizations" className="gap-2">
                         <Users className="h-4 w-4" />
                         Organizations
+                    </TabsTrigger>
+                    <TabsTrigger value="reports" className="gap-2">
+                        <BarChart3 className="h-4 w-4" />
+                        Reports
                     </TabsTrigger>
                 </TabsList>
 
@@ -315,6 +321,26 @@ export const AdminPanel = () => {
 
                 <TabsContent value="organizations" className="mt-6">
                     <AdminOrganizations />
+                </TabsContent>
+
+                <TabsContent value="reports" className="mt-6">
+                    <Card className="flex flex-col shadow-sm border-muted-foreground/10">
+                        <CardHeader className="bg-muted/30 pb-4">
+                            <div className="flex items-center gap-2 mb-1">
+                                <BarChart3 className="w-5 h-5 text-primary" />
+                                <CardTitle className="text-lg">Reports</CardTitle>
+                            </div>
+                            <CardDescription>
+                                Generate booking reports by organization and date range. Export as PDF.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-6">
+                            <Button onClick={() => navigate('/reports')}>
+                                <BarChart3 className="mr-2 h-4 w-4" />
+                                Open Reports Page
+                            </Button>
+                        </CardContent>
+                    </Card>
                 </TabsContent>
             </Tabs>
 

@@ -1,301 +1,416 @@
 import { Header } from "@/components/booking/Header";
 import { Footer } from "@/components/booking/Footer";
-import { useBookings } from "@/hooks/useBookings";
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import {
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
-    PieChart,
-    Pie,
-    Cell
-} from "recharts";
-import {
-    History,
-    TrendingUp,
-    Users,
-    Clock,
-    Calendar,
-    ChevronLeft
-} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ChevronLeft, FileDown, Loader2, Calendar, Building2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useMemo } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useReports, type ReportFilters, type ReportBooking } from "@/hooks/useReports";
+import { useOrganizations } from "@/hooks/useOrganizations";
+import {
+  formatEquipmentList,
+  formatCateringOption,
+  formatBookingType,
+  formatAttendanceType,
+  calculateRevenue,
+} from "@/utils/reportFormatters";
+import { generateBookingReportPDF } from "@/utils/pdfGenerator";
+import { useState, useMemo, Fragment } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+function equipmentList(b: ReportBooking): string {
+  const items: string[] = [];
+  if (b.needsDisplayScreen) items.push("Display screen");
+  if (b.needsVideoConferencing) items.push("Video conferencing");
+  if (b.needsProjector) items.push("Projector");
+  if (b.needsWhiteboard) items.push("Whiteboard");
+  if (b.needsConferencePhone) items.push("Conference phone");
+  if (b.needsExtensionPower) items.push("Extension power");
+  return items.length ? items.join(", ") : "None";
+}
 
 const Reports = () => {
-    const { bookings, allBookings } = useBookings();
-    const navigate = useNavigate();
-    
-    // Use allBookings for reports (shows all bookings, not just user's)
-    // Fallback to bookings if allBookings is not available
-    const reportBookings = allBookings && allBookings.length > 0 ? allBookings : bookings;
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { organizations } = useOrganizations();
+  const {
+    reportData,
+    isLoading,
+    error,
+    fetchReport,
+    defaultFilters,
+  } = useReports();
 
-    const stats = useMemo(() => {
-        const total = reportBookings.length;
-        const confirmed = reportBookings.filter(b => b.status === 'confirmed').length;
-        const cancelled = reportBookings.filter(b => b.status === 'cancelled').length;
+  const isAdmin = user?.role === "ADMIN";
+  const [filters, setFilters] = useState<ReportFilters>(defaultFilters);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
-        // Organization stats
-        const orgMap: Record<string, number> = {};
-        reportBookings.forEach(b => {
-            orgMap[b.organizationName] = (orgMap[b.organizationName] || 0) + 1;
-        });
+  const handleGenerate = async () => {
+    try {
+      await fetchReport(filters);
+    } catch {
+      // error already set in hook
+    }
+  };
 
-        const orgData = Object.entries(orgMap)
-            .map(([name, value]) => ({ name, value }))
-            .sort((a, b) => b.value - a.value);
+  const handleExportPDF = () => {
+    if (!reportData) return;
+    generateBookingReportPDF(reportData, filters);
+  };
 
-        // Day of week stats
-        const dayMap: Record<string, number> = {
-            'Mon': 0, 'Tue': 0, 'Wed': 0, 'Thu': 0, 'Fri': 0
-        };
+  const revenue = useMemo(() => {
+    if (!reportData?.bookings.length || !organizations.length) return 0;
+    return calculateRevenue(reportData.bookings as Parameters<typeof calculateRevenue>[0], organizations);
+  }, [reportData?.bookings, organizations]);
 
-        reportBookings.forEach(b => {
-            const date = new Date(b.date);
-            const day = date.toLocaleDateString('en-US', { weekday: 'short' });
-            if (dayMap[day] !== undefined) {
-                dayMap[day]++;
-            }
-        });
+  const orgOptions = useMemo(() => {
+    if (!isAdmin) return [];
+    return organizations.map((o) => ({ value: o.name, label: o.name }));
+  }, [isAdmin, organizations]);
 
-        const dayData = Object.entries(dayMap).map(([name, value]) => ({ name, value }));
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      <Header />
 
-        return {
-            total,
-            confirmed,
-            cancelled,
-            orgData,
-            dayData,
-            topOrg: orgData[0]?.name || "N/A"
-        };
-    }, [reportBookings]);
-
-    return (
-        <div className="min-h-screen bg-background flex flex-col">
-            <Header />
-
-            <main className="container mx-auto px-4 py-8 space-y-8 animate-fade-in flex-1">
-                <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-                        <ChevronLeft className="h-5 w-5" />
-                    </Button>
-                    <div className="flex flex-col space-y-1">
-                        <h1 className="text-3xl font-bold tracking-tight">Reports & Analytics</h1>
-                        <p className="text-muted-foreground">
-                            Deep dive into boardroom usage and reservation patterns.
-                        </p>
-                    </div>
-                </div>
-
-                {/* Quick Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <Card className="shadow-sm border-muted-foreground/10">
-                        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                            <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
-                            <History className="h-4 w-4 text-primary" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{stats.total}</div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                                Lifetime reservations
-                            </p>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="shadow-sm border-muted-foreground/10">
-                        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                            <CardTitle className="text-sm font-medium">Top Organization</CardTitle>
-                            <Users className="h-4 w-4 text-primary" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold truncate max-w-full">{stats.topOrg}</div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                                Most active group
-                            </p>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="shadow-sm border-muted-foreground/10">
-                        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                            <CardTitle className="text-sm font-medium">Confirmation Rate</CardTitle>
-                            <TrendingUp className="h-4 w-4 text-green-500" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                {stats.total > 0 ? Math.round((stats.confirmed / stats.total) * 100) : 0}%
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                                Successfully held
-                            </p>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="shadow-sm border-muted-foreground/10">
-                        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                            <CardTitle className="text-sm font-medium">Cancellation Rate</CardTitle>
-                            <Clock className="h-4 w-4 text-destructive" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                {stats.total > 0 ? Math.round((stats.cancelled / stats.total) * 100) : 0}%
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                                Rescheduled or voided
-                            </p>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Charts Section */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <Card className="shadow-sm border-muted-foreground/10">
-                        <CardHeader>
-                            <CardTitle>Usage Frequency</CardTitle>
-                            <CardDescription>Bookings by day of the week</CardDescription>
-                        </CardHeader>
-                        <CardContent className="h-[300px]">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={stats.dayData}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                                    <YAxis axisLine={false} tickLine={false} />
-                                    <Tooltip
-                                        contentStyle={{
-                                            backgroundColor: 'hsl(var(--background))',
-                                            borderColor: 'hsl(var(--border))',
-                                            borderRadius: '8px'
-                                        }}
-                                    />
-                                    <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="shadow-sm border-muted-foreground/10">
-                        <CardHeader>
-                            <CardTitle>Organization Share</CardTitle>
-                            <CardDescription>Distribution across groups</CardDescription>
-                        </CardHeader>
-                        <CardContent className="h-[300px] flex items-center justify-center">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie
-                                        data={stats.orgData}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={60}
-                                        outerRadius={80}
-                                        paddingAngle={5}
-                                        dataKey="value"
-                                    >
-                                        {stats.orgData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip
-                                        contentStyle={{
-                                            backgroundColor: 'hsl(var(--background))',
-                                            borderColor: 'hsl(var(--border))',
-                                            borderRadius: '8px'
-                                        }}
-                                    />
-                                </PieChart>
-                            </ResponsiveContainer>
-                            <div className="flex flex-col gap-2 ml-4">
-                                {stats.orgData.slice(0, 5).map((org, i) => (
-                                    <div key={org.name} className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                                        <span className="text-xs font-medium truncate w-32">{org.name}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Full History */}
-                <Card className="shadow-sm border-muted-foreground/10">
-                    <CardHeader>
-                        <div className="flex items-center gap-2">
-                            <Calendar className="h-5 w-5 text-primary" />
-                            <CardTitle>Detailed Booking History</CardTitle>
-                        </div>
-                        <CardDescription>A complete log of all boardroom activities.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Time</TableHead>
-                                    <TableHead>Organization</TableHead>
-                                    <TableHead>Contact</TableHead>
-                                    <TableHead>Status</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {reportBookings.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
-                                            No records found.
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    reportBookings
-                                        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                                        .map((booking) => (
-                                            <TableRow key={booking.id} className="hover:bg-muted/30">
-                                                <TableCell className="font-medium">{booking.date}</TableCell>
-                                                <TableCell>{booking.startTime} - {booking.endTime}</TableCell>
-                                                <TableCell>{booking.organizationName}</TableCell>
-                                                <TableCell>{booking.contactName}</TableCell>
-                                                <TableCell>
-                                                    <Badge
-                                                        variant={
-                                                            booking.status === 'confirmed' ? 'default' :
-                                                                booking.status === 'pending' ? 'secondary' :
-                                                                    'destructive'
-                                                        }
-                                                        className={
-                                                            booking.status === 'confirmed' ? 'bg-green-100 text-green-700 hover:bg-green-100' : ''
-                                                        }
-                                                    >
-                                                        {booking.status}
-                                                    </Badge>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
-            </main>
-            <Footer />
+      <main className="container mx-auto px-4 py-8 space-y-8 animate-fade-in flex-1">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+          <div className="flex flex-col space-y-1">
+            <h1 className="text-3xl font-bold tracking-tight">Reports</h1>
+            <p className="text-muted-foreground">
+              Generate booking reports by organization and date range. Export as PDF.
+            </p>
+          </div>
         </div>
-    );
+
+        {/* Filters */}
+        <Card className="shadow-sm border-muted-foreground/10">
+          <CardHeader>
+            <CardTitle className="text-lg">Filters</CardTitle>
+            <CardDescription>Select organization and date range, then generate report.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {isAdmin && (
+                <div className="space-y-2">
+                  <Label>Organization</Label>
+                  <Select
+                    value={filters.organizationName || "all"}
+                    onValueChange={(v) =>
+                      setFilters((prev) => ({ ...prev, organizationName: v === "all" ? "" : v }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="All organizations" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All organizations</SelectItem>
+                      {orgOptions.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {!isAdmin && user?.companyName && (
+                <div className="space-y-2">
+                  <Label>Organization</Label>
+                  <div className="flex h-10 items-center rounded-md border px-3 text-sm bg-muted/50">
+                    <Building2 className="mr-2 h-4 w-4 text-muted-foreground" />
+                    {user.companyName}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label>Date filter</Label>
+                <Select
+                  value={filters.filterType}
+                  onValueChange={(v: "month" | "range") =>
+                    setFilters((prev) => ({ ...prev, filterType: v }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="month">By month</SelectItem>
+                    <SelectItem value="range">Date range</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {filters.filterType === "month" && (
+                <div className="space-y-2">
+                  <Label>Month</Label>
+                  <input
+                    type="month"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    value={filters.month}
+                    onChange={(e) =>
+                      setFilters((prev) => ({ ...prev, month: e.target.value }))
+                    }
+                  />
+                </div>
+              )}
+
+              {filters.filterType === "range" && (
+                <>
+                  <div className="space-y-2">
+                    <Label>Start date</Label>
+                    <input
+                      type="date"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      value={filters.startDate}
+                      onChange={(e) =>
+                        setFilters((prev) => ({ ...prev, startDate: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>End date</Label>
+                    <input
+                      type="date"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      value={filters.endDate}
+                      onChange={(e) =>
+                        setFilters((prev) => ({ ...prev, endDate: e.target.value }))
+                      }
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Button onClick={handleGenerate} disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating…
+                  </>
+                ) : (
+                  <>
+                    <Calendar className="mr-2 h-4 w-4" />
+                    Generate Report
+                  </>
+                )}
+              </Button>
+              {reportData && (
+                <Button variant="outline" onClick={handleExportPDF}>
+                  <FileDown className="mr-2 h-4 w-4" />
+                  Export as PDF
+                </Button>
+              )}
+            </div>
+
+            {error && (
+              <p className="text-sm text-destructive">{error}</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Summary */}
+        {reportData && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <Card className="shadow-sm border-muted-foreground/10">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{reportData.summary.totalBookings}</div>
+              </CardContent>
+            </Card>
+            <Card className="shadow-sm border-muted-foreground/10">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Total Hours</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{reportData.summary.totalHours}</div>
+              </CardContent>
+            </Card>
+            <Card className="shadow-sm border-muted-foreground/10">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Free Hours Used</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{reportData.summary.freeHoursUsed}</div>
+              </CardContent>
+            </Card>
+            <Card className="shadow-sm border-muted-foreground/10">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Paid Hours</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{reportData.summary.paidHours}</div>
+              </CardContent>
+            </Card>
+            <Card className="shadow-sm border-muted-foreground/10">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Revenue (est.)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {revenue > 0 ? `$${revenue.toFixed(2)}` : "—"}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {reportData && (
+          <Card className="shadow-sm border-muted-foreground/10">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">By status</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-wrap gap-4">
+              <span className="text-sm">
+                Confirmed: <strong>{reportData.summary.byStatus.confirmed}</strong>
+              </span>
+              <span className="text-sm">
+                Pending: <strong>{reportData.summary.byStatus.pending}</strong>
+              </span>
+              <span className="text-sm">
+                Cancelled: <strong>{reportData.summary.byStatus.cancelled}</strong>
+              </span>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Detailed table */}
+        {reportData && reportData.bookings.length > 0 && (
+          <Card className="shadow-sm border-muted-foreground/10">
+            <CardHeader>
+              <CardTitle>Bookings</CardTitle>
+              <CardDescription>All bookings in the selected range. Expand row for purpose and contact details.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-8"></TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Time</TableHead>
+                    <TableHead>Duration</TableHead>
+                    <TableHead>Organization</TableHead>
+                    <TableHead>Contact</TableHead>
+                    <TableHead>Attendees</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Equipment</TableHead>
+                    <TableHead>Catering</TableHead>
+                    <TableHead>Billing</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {reportData.bookings.map((booking) => (
+                    <Fragment key={booking.id}>
+                      <TableRow className="hover:bg-muted/30">
+                        <TableCell className="w-8 p-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() =>
+                              setExpandedId((id) => (id === booking.id ? null : booking.id))
+                            }
+                          >
+                            {expandedId === booking.id ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </TableCell>
+                        <TableCell className="font-medium">{booking.date}</TableCell>
+                        <TableCell>{booking.startTime} – {booking.endTime}</TableCell>
+                        <TableCell>
+                          {booking.durationHours != null
+                            ? `${Number(booking.durationHours).toFixed(2)} h`
+                            : "—"}
+                        </TableCell>
+                        <TableCell>{booking.organizationName}</TableCell>
+                        <TableCell>{booking.contactName}</TableCell>
+                        <TableCell>{booking.attendees}</TableCell>
+                        <TableCell>{formatAttendanceType(booking.attendanceType)}</TableCell>
+                        <TableCell className="max-w-[180px] text-xs">
+                          {equipmentList(booking)}
+                        </TableCell>
+                        <TableCell>{formatCateringOption(booking.cateringOption)}</TableCell>
+                        <TableCell>{formatBookingType(booking.bookingType)}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              booking.status === "confirmed"
+                                ? "default"
+                                : booking.status === "pending"
+                                  ? "secondary"
+                                  : "destructive"
+                            }
+                          >
+                            {booking.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                      {expandedId === booking.id && (
+                        <TableRow className="bg-muted/20">
+                          <TableCell colSpan={11} className="text-sm text-muted-foreground">
+                            <div className="py-2 space-y-1">
+                              <p><strong>Purpose:</strong> {booking.purpose || "—"}</p>
+                              <p><strong>Email:</strong> {booking.contactEmail}</p>
+                              {booking.contactPhone && (
+                                <p><strong>Phone:</strong> {booking.contactPhone}</p>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </Fragment>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        {reportData && reportData.bookings.length === 0 && (
+          <Card className="shadow-sm border-muted-foreground/10">
+            <CardContent className="py-12 text-center text-muted-foreground">
+              No bookings found for the selected filters.
+            </CardContent>
+          </Card>
+        )}
+      </main>
+      <Footer />
+    </div>
+  );
 };
 
 export default Reports;
