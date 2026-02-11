@@ -32,49 +32,76 @@ function attendance(type: string): string {
 export function generateBookingReportPDF(reportData: ReportData, filters: ReportFilters): void {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pageWidth = doc.getPageWidth();
+  const pageHeight = doc.getPageHeight();
   let y = 18;
 
-  // Header
-  doc.setFontSize(18);
+  // Branding header: logo placeholder + BoardRoom Pro
+  doc.setFillColor(41, 98, 255); // primary blue
+  doc.roundedRect(14, y - 4, 14, 14, 2, 2, 'F');
+  doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
-  doc.text('Booking Report', 14, y);
-  y += 8;
-
   doc.setFontSize(10);
+  doc.text('BR', 21, y + 4, { align: 'center' }); // 14 + 14/2 = 21
+  doc.setTextColor(41, 98, 255);
+  doc.setFontSize(20);
+  doc.setFont('helvetica', 'bold');
+  doc.text('BoardRoom Pro', 32, y + 2);
   doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(100, 100, 100);
+  doc.text('Shared Boardroom Management', 32, y + 8);
+  doc.setTextColor(0, 0, 0);
+  y += 18;
+
+  // Report title and meta
+  doc.setDrawColor(220, 220, 220);
+  doc.setLineWidth(0.3);
+  doc.line(14, y, pageWidth - 14, y);
+  y += 8;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.text('Booking Report', 14, y);
+  y += 7;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
   const generatedAt = new Date(reportData.metadata.generatedAt).toLocaleString();
   doc.text(`Generated: ${generatedAt}`, 14, y);
   y += 5;
-
   const orgFilter = reportData.metadata.organizationFilter || filters.organizationName || 'All organizations';
   doc.text(`Organization: ${orgFilter}`, 14, y);
   y += 5;
-
   const { start, end } = reportData.metadata.dateRange;
   const dateRangeStr = start && end ? `${start} to ${end}` : start ? `From ${start}` : 'All dates';
   doc.text(`Date range: ${dateRangeStr}`, 14, y);
-  y += 10;
+  y += 12;
 
-  // Summary
+  // Summary as a table
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.text('Summary', 14, y);
   y += 6;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
   const s = reportData.summary;
-  doc.text(`Total bookings: ${s.totalBookings}`, 14, y);
-  y += 5;
-  doc.text(`Total hours (booked): ${s.totalHours}`, 14, y);
-  y += 5;
-  doc.text(`Confirmed & held (hours): ${s.confirmedHeldHours ?? 0}`, 14, y);
-  y += 5;
-  doc.text(`Free hours used: ${s.freeHoursUsed}`, 14, y);
-  y += 5;
-  doc.text(`Paid hours: ${s.paidHours}`, 14, y);
-  y += 5;
-  doc.text(`By status — Confirmed: ${s.byStatus.confirmed}, Pending: ${s.byStatus.pending}, Cancelled: ${s.byStatus.cancelled}`, 14, y);
-  y += 12;
+  const summaryRows = [
+    ['Total bookings', String(s.totalBookings)],
+    ['Total hours (booked)', String(s.totalHours)],
+    ['Confirmed & held (hours)', String(s.confirmedHeldHours ?? 0)],
+    ['Free hours used', String(s.freeHoursUsed)],
+    ['Paid hours', String(s.paidHours)],
+    ['By status', `Confirmed: ${s.byStatus.confirmed}  |  Pending: ${s.byStatus.pending}  |  Cancelled: ${s.byStatus.cancelled}`]
+  ];
+  autoTable(doc, {
+    startY: y,
+    head: [['Metric', 'Value']],
+    body: summaryRows,
+    theme: 'plain',
+    headStyles: { fontSize: 9, fillColor: [240, 240, 240], textColor: [0, 0, 0] },
+    bodyStyles: { fontSize: 9 },
+    columnStyles: { 0: { cellWidth: 55 }, 1: { cellWidth: 120 } },
+    margin: { left: 14 },
+    tableLineColor: [220, 220, 220],
+    tableLineWidth: 0.2
+  });
+  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
 
   // Table
   doc.setFont('helvetica', 'bold');

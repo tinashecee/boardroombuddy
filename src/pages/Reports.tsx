@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ChevronLeft, FileDown, Loader2, Calendar, Building2 } from "lucide-react";
+import { ChevronLeft, FileDown, Loader2, Calendar, Building2, CalendarCheck, Clock, DollarSign, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useReports, type ReportFilters, type ReportBooking } from "@/hooks/useReports";
@@ -237,80 +237,102 @@ const Reports = () => {
           </CardContent>
         </Card>
 
-        {/* Summary */}
+        {/* Report header: logo + branding (when report is generated) */}
         {reportData && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-            <Card className="shadow-sm border-muted-foreground/10">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{reportData.summary.totalBookings}</div>
-              </CardContent>
-            </Card>
-            <Card className="shadow-sm border-muted-foreground/10">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Total Hours (booked)</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{reportData.summary.totalHours}</div>
-              </CardContent>
-            </Card>
-            <Card className="shadow-sm border-muted-foreground/10">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Confirmed & held (hours)</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {reportData.summary.confirmedHeldHours ?? 0}
+          <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 overflow-hidden">
+            <CardContent className="pt-6 pb-6">
+              <div className="flex items-center gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                  <Building2 className="h-8 w-8" />
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">Confirmed meetings that took place</p>
-              </CardContent>
-            </Card>
-            <Card className="shadow-sm border-muted-foreground/10">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Free Hours Used</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{reportData.summary.freeHoursUsed}</div>
-              </CardContent>
-            </Card>
-            <Card className="shadow-sm border-muted-foreground/10">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Paid Hours</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{reportData.summary.paidHours}</div>
-              </CardContent>
-            </Card>
-            <Card className="shadow-sm border-muted-foreground/10">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Revenue (est.)</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {revenue > 0 ? `$${revenue.toFixed(2)}` : "—"}
+                <div>
+                  <h2 className="text-2xl font-bold tracking-tight text-foreground">BoardRoom Pro</h2>
+                  <p className="text-sm text-muted-foreground">Shared Boardroom Management</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Booking Report
+                    {reportData.metadata.organizationFilter && ` · ${reportData.metadata.organizationFilter}`}
+                    {reportData.metadata.dateRange.start && reportData.metadata.dateRange.end &&
+                      ` · ${reportData.metadata.dateRange.start} to ${reportData.metadata.dateRange.end}`}
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
+        {/* Summary — single card with clear stat grid */}
         {reportData && (
           <Card className="shadow-sm border-muted-foreground/10">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">By status</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Summary</CardTitle>
+              <CardDescription>Overview of bookings and hours for the selected period</CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-wrap gap-4">
-              <span className="text-sm">
-                Confirmed: <strong>{reportData.summary.byStatus.confirmed}</strong>
-              </span>
-              <span className="text-sm">
-                Pending: <strong>{reportData.summary.byStatus.pending}</strong>
-              </span>
-              <span className="text-sm">
-                Cancelled: <strong>{reportData.summary.byStatus.cancelled}</strong>
-              </span>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div className="flex flex-col rounded-lg border bg-muted/30 p-4">
+                  <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                    <CalendarCheck className="h-4 w-4" />
+                    <span className="text-xs font-medium uppercase tracking-wide">Total Bookings</span>
+                  </div>
+                  <span className="text-2xl font-bold tabular-nums">{reportData.summary.totalBookings}</span>
+                </div>
+                <div className="flex flex-col rounded-lg border bg-muted/30 p-4">
+                  <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                    <Clock className="h-4 w-4" />
+                    <span className="text-xs font-medium uppercase tracking-wide">Total Hours</span>
+                  </div>
+                  <span className="text-2xl font-bold tabular-nums">{reportData.summary.totalHours}</span>
+                  <span className="text-xs text-muted-foreground mt-0.5">booked</span>
+                </div>
+                <div className="flex flex-col rounded-lg border bg-muted/30 p-4">
+                  <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                    <TrendingUp className="h-4 w-4" />
+                    <span className="text-xs font-medium uppercase tracking-wide">Confirmed & Held</span>
+                  </div>
+                  <span className="text-2xl font-bold tabular-nums">{reportData.summary.confirmedHeldHours ?? 0}</span>
+                  <span className="text-xs text-muted-foreground mt-0.5">hours</span>
+                </div>
+                <div className="flex flex-col rounded-lg border bg-muted/30 p-4">
+                  <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                    <Clock className="h-4 w-4" />
+                    <span className="text-xs font-medium uppercase tracking-wide">Free Hours Used</span>
+                  </div>
+                  <span className="text-2xl font-bold tabular-nums">{reportData.summary.freeHoursUsed}</span>
+                </div>
+                <div className="flex flex-col rounded-lg border bg-muted/30 p-4">
+                  <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                    <Clock className="h-4 w-4" />
+                    <span className="text-xs font-medium uppercase tracking-wide">Paid Hours</span>
+                  </div>
+                  <span className="text-2xl font-bold tabular-nums">{reportData.summary.paidHours}</span>
+                </div>
+                <div className="flex flex-col rounded-lg border bg-muted/30 p-4">
+                  <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                    <DollarSign className="h-4 w-4" />
+                    <span className="text-xs font-medium uppercase tracking-wide">Revenue (est.)</span>
+                  </div>
+                  <span className="text-2xl font-bold tabular-nums">
+                    {revenue > 0 ? `$${revenue.toFixed(2)}` : "—"}
+                  </span>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-6 pt-2 border-t">
+                <span className="text-sm font-medium text-muted-foreground">By status</span>
+                <div className="flex items-center gap-4">
+                  <span className="inline-flex items-center gap-1.5 text-sm">
+                    <span className="h-2 w-2 rounded-full bg-green-500" />
+                    Confirmed: <strong>{reportData.summary.byStatus.confirmed}</strong>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-sm">
+                    <span className="h-2 w-2 rounded-full bg-amber-500" />
+                    Pending: <strong>{reportData.summary.byStatus.pending}</strong>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-sm">
+                    <span className="h-2 w-2 rounded-full bg-red-500" />
+                    Cancelled: <strong>{reportData.summary.byStatus.cancelled}</strong>
+                  </span>
+                </div>
+              </div>
             </CardContent>
           </Card>
         )}
