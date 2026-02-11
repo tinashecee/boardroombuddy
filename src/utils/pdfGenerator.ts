@@ -65,7 +65,9 @@ export function generateBookingReportPDF(reportData: ReportData, filters: Report
   const s = reportData.summary;
   doc.text(`Total bookings: ${s.totalBookings}`, 14, y);
   y += 5;
-  doc.text(`Total hours: ${s.totalHours}`, 14, y);
+  doc.text(`Total hours (booked): ${s.totalHours}`, 14, y);
+  y += 5;
+  doc.text(`Confirmed & held (hours): ${s.confirmedHeldHours ?? 0}`, 14, y);
   y += 5;
   doc.text(`Free hours used: ${s.freeHoursUsed}`, 14, y);
   y += 5;
@@ -83,7 +85,7 @@ export function generateBookingReportPDF(reportData: ReportData, filters: Report
   const tableData = reportData.bookings.map((b) => [
     b.date,
     `${b.startTime} - ${b.endTime}`,
-    b.durationHours != null ? String(b.durationHours.toFixed(2)) : '—',
+    b.durationHours != null ? String(Number(b.durationHours).toFixed(2)) : '—',
     b.organizationName || '—',
     b.contactName || '—',
     [b.contactEmail, b.contactPhone].filter(Boolean).join(' / ') || '—',

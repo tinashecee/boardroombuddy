@@ -239,7 +239,7 @@ const Reports = () => {
 
         {/* Summary */}
         {reportData && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
             <Card className="shadow-sm border-muted-foreground/10">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
@@ -250,10 +250,21 @@ const Reports = () => {
             </Card>
             <Card className="shadow-sm border-muted-foreground/10">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Total Hours</CardTitle>
+                <CardTitle className="text-sm font-medium">Total Hours (booked)</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{reportData.summary.totalHours}</div>
+              </CardContent>
+            </Card>
+            <Card className="shadow-sm border-muted-foreground/10">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Confirmed & held (hours)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {reportData.summary.confirmedHeldHours ?? 0}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Confirmed meetings that took place</p>
               </CardContent>
             </Card>
             <Card className="shadow-sm border-muted-foreground/10">

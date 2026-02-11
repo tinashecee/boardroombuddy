@@ -19,8 +19,28 @@ function formatDate(dateValue) {
   return dateValue;
 }
 
-// Map DB row to report booking object
+// Compute duration in hours from start_time and end_time (HH:mm or HH:mm:ss)
+function computeDurationHours(startTime, endTime) {
+  if (!startTime || !endTime) return null;
+  const toMinutes = (t) => {
+    const parts = String(t).trim().split(':');
+    const h = parseInt(parts[0], 10) || 0;
+    const m = parseInt(parts[1], 10) || 0;
+    return h * 60 + m;
+  };
+  const startM = toMinutes(startTime);
+  const endM = toMinutes(endTime);
+  if (endM <= startM) return null;
+  return Math.round(((endM - startM) / 60) * 100) / 100;
+}
+
+// Map DB row to report booking object; always compute duration (from DB or start/end)
 function mapBookingRow(b) {
+  const startStr = b.start_time ? b.start_time.substring(0, 5) : '';
+  const endStr = b.end_time ? b.end_time.substring(0, 5) : '';
+  const durationHours = b.duration_hours != null
+    ? Number(b.duration_hours)
+    : computeDurationHours(b.start_time, b.end_time);
   return {
     id: b.id,
     userId: b.user_id,
@@ -29,8 +49,8 @@ function mapBookingRow(b) {
     contactEmail: b.contact_email,
     contactPhone: b.contact_phone || '',
     date: formatDate(b.booking_date),
-    startTime: b.start_time ? b.start_time.substring(0, 5) : '',
-    endTime: b.end_time ? b.end_time.substring(0, 5) : '',
+    startTime: startStr,
+    endTime: endStr,
     purpose: b.purpose,
     attendees: b.attendees,
     attendanceType: b.attendance_type || 'INTERNAL',
@@ -42,7 +62,7 @@ function mapBookingRow(b) {
     needsExtensionPower: !!b.needs_extension_power,
     cateringOption: b.catering_option || 'NONE',
     bookingType: b.booking_type || 'FREE_HOURS',
-    durationHours: b.duration_hours != null ? Number(b.duration_hours) : null,
+    durationHours,
     status: b.status,
     createdAt: b.created_at
   };
@@ -134,12 +154,17 @@ router.get('/', async (req, res) => {
     const [rows] = await db.query(query, params);
     const bookings = rows.map(mapBookingRow);
 
+    const todayStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
     const totalHours = bookings.reduce((sum, b) => sum + (b.durationHours != null ? b.durationHours : 0), 0);
     const freeHoursUsed = bookings
       .filter(b => b.bookingType === 'FREE_HOURS')
       .reduce((sum, b) => sum + (b.durationHours != null ? b.durationHours : 0), 0);
     const paidHours = bookings
       .filter(b => b.bookingType === 'HIRE')
+      .reduce((sum, b) => sum + (b.durationHours != null ? b.durationHours : 0), 0);
+    // Total hours for meetings that were confirmed and have already taken place (booking_date in the past)
+    const confirmedHeldHours = bookings
+      .filter(b => b.status === 'confirmed' && b.date && b.date < todayStr)
       .reduce((sum, b) => sum + (b.durationHours != null ? b.durationHours : 0), 0);
 
     const byStatus = {
@@ -159,6 +184,7 @@ router.get('/', async (req, res) => {
         totalHours: Math.round(totalHours * 100) / 100,
         freeHoursUsed: Math.round(freeHoursUsed * 100) / 100,
         paidHours: Math.round(paidHours * 100) / 100,
+        confirmedHeldHours: Math.round(confirmedHeldHours * 100) / 100,
         byStatus
       },
       bookings

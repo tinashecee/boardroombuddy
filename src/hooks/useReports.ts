@@ -15,6 +15,7 @@ export interface ReportSummary {
   totalHours: number;
   freeHoursUsed: number;
   paidHours: number;
+  confirmedHeldHours: number;
   byStatus: { confirmed: number; pending: number; cancelled: number };
 }
 
