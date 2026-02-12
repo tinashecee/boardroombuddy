@@ -3,23 +3,19 @@ const router = express.Router();
 const db = require('../db');
 const jwt = require('jsonwebtoken');
 
-// Get all organizations with computed "used this month" (confirmed, past bookings in current month)
+// Get all organizations with computed "used this month": sum of duration_hours
+// for bookings where status = 'confirmed' and created_at is in the current month
 router.get('/', async (req, res) => {
   try {
     const [rows] = await db.query('SELECT * FROM organizations ORDER BY name ASC');
-    const firstOfMonth = new Date();
-    firstOfMonth.setDate(1);
-    firstOfMonth.setHours(0, 0, 0, 0);
-    const firstStr = firstOfMonth.toISOString().slice(0, 10);
     const [usedRows] = await db.query(
       `SELECT organization_name, SUM(duration_hours) AS used_hours
        FROM bookings
        WHERE status = 'confirmed'
-         AND booking_date >= ?
-         AND booking_date < CURDATE()
+         AND created_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+         AND created_at < DATE_FORMAT(CURDATE(), '%Y-%m-01') + INTERVAL 1 MONTH
          AND duration_hours IS NOT NULL
-       GROUP BY organization_name`,
-      [firstStr]
+       GROUP BY organization_name`
     );
     const usedByOrg = new Map();
     for (const row of usedRows) {
