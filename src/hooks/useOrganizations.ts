@@ -57,11 +57,18 @@ export function useOrganizations() {
         id: string,
         updates: Partial<Pick<Organization, 'name' | 'is_tenant' | 'monthly_free_hours' | 'used_free_hours_this_month' | 'billing_rate_per_hour'>>
     ) => {
+        // Backend expects camelCase; Organization type uses snake_case
+        const body: Record<string, unknown> = {};
+        if (updates.name !== undefined) body.name = updates.name;
+        if (updates.is_tenant !== undefined) body.isTenant = updates.is_tenant;
+        if (updates.monthly_free_hours !== undefined) body.monthlyFreeHours = updates.monthly_free_hours;
+        if (updates.used_free_hours_this_month !== undefined) body.usedFreeHoursThisMonth = updates.used_free_hours_this_month;
+        if (updates.billing_rate_per_hour !== undefined) body.billingRatePerHour = updates.billing_rate_per_hour;
         try {
             const response = await fetch(`${API_URL}/${id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updates),
+                body: JSON.stringify(body),
             });
             if (!response.ok) throw new Error('Failed to update organization');
             const updated = await response.json();
