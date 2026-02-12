@@ -162,10 +162,11 @@ router.get('/', async (req, res) => {
         bookingType: b.booking_type || 'FREE_HOURS',
         durationHours: b.duration_hours || null,
         status: b.status,
-        createdAt: b.created_at
+        createdAt: b.created_at,
+        adminApprovalComments: b.admin_approval_comments != null ? b.admin_approval_comments : ''
       };
     });
-    
+
     res.json(bookings);
   } catch (error) {
     if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
@@ -403,8 +404,8 @@ router.patch('/:id/status', async (req, res) => {
   }
 
   const { id } = req.params;
-  const { status } = req.body;
-  
+  const { status, approvalDetails } = req.body;
+
   if (!['confirmed', 'pending', 'cancelled'].includes(status)) {
     return res.status(400).json({ message: 'Invalid status' });
   }
@@ -421,7 +422,7 @@ router.patch('/:id/status', async (req, res) => {
 
     // Get the booking to check ownership and get full booking details
     const [bookings] = await db.query(
-      'SELECT * FROM bookings WHERE id = ?', 
+      'SELECT * FROM bookings WHERE id = ?',
       [id]
     );
     const booking = bookings[0];
@@ -433,15 +434,61 @@ router.patch('/:id/status', async (req, res) => {
     // Allow cancellation if user owns the booking, or allow any status change if admin
     const isOwner = booking.user_id === user.id;
     const isAdmin = user.role === 'ADMIN';
-    
+
     if (status === 'cancelled' && (isAdmin || isOwner)) {
       // Users can cancel their own bookings, admins can cancel any
-    await db.query('UPDATE bookings SET status = ? WHERE id = ?', [status, id]);
-    res.json({ message: `Booking status updated to ${status}` });
-    } else if (isAdmin) {
-      // Admins can set any status
       await db.query('UPDATE bookings SET status = ? WHERE id = ?', [status, id]);
-      
+      res.json({ message: `Booking status updated to ${status}` });
+    } else if (isAdmin) {
+      // Admins can set any status; when confirming, optional approvalDetails can strip equipment/catering and set comments
+      const equipmentToDb = {
+        displayScreen: 'needs_display_screen',
+        videoConferencing: 'needs_video_conferencing',
+        projector: 'needs_projector',
+        whiteboard: 'needs_whiteboard',
+        conferencePhone: 'needs_conference_phone',
+        extensionPower: 'needs_extension_power',
+      };
+      const equipmentLabels = {
+        displayScreen: 'Display screen',
+        videoConferencing: 'Video conferencing',
+        projector: 'Projector',
+        whiteboard: 'Whiteboard',
+        conferencePhone: 'Conference phone',
+        extensionPower: 'Extension power',
+      };
+
+      if (status === 'confirmed' && approvalDetails && typeof approvalDetails === 'object') {
+        const fields = ['status = ?'];
+        const params = [status];
+
+        const pe = approvalDetails.provideEquipment;
+        if (pe && typeof pe === 'object') {
+          for (const [key, dbCol] of Object.entries(equipmentToDb)) {
+            if (pe[key] === false) {
+              fields.push(`${dbCol} = ?`);
+              params.push(false);
+            }
+          }
+        }
+        if (approvalDetails.provideCatering === false) {
+          fields.push('catering_option = ?');
+          params.push('NONE');
+        }
+        if (approvalDetails.adminComments !== undefined) {
+          fields.push('admin_approval_comments = ?');
+          params.push(approvalDetails.adminComments == null ? null : String(approvalDetails.adminComments));
+        }
+
+        params.push(id);
+        await db.query(
+          `UPDATE bookings SET ${fields.join(', ')} WHERE id = ?`,
+          params
+        );
+      } else {
+        await db.query('UPDATE bookings SET status = ? WHERE id = ?', [status, id]);
+      }
+
       // If booking is being approved (confirmed), send confirmation email to user
       if (status === 'confirmed' && emailService && emailService.notifyUserBookingApproved) {
         const bookingForEmail = {
@@ -451,18 +498,43 @@ router.patch('/:id/status', async (req, res) => {
           contactName: booking.contact_name,
           contactEmail: booking.contact_email,
           date: booking.booking_date,
-          startTime: booking.start_time.substring(0, 5),
-          endTime: booking.end_time.substring(0, 5),
+          startTime: (booking.start_time || '').substring(0, 5),
+          endTime: (booking.end_time || '').substring(0, 5),
           purpose: booking.purpose || '',
           attendees: booking.attendees,
         };
-        
-        // Send email notification to user (async, don't wait)
-        emailService.notifyUserBookingApproved(bookingForEmail).catch(err => {
+
+        let emailOptions = null;
+        if (approvalDetails && typeof approvalDetails === 'object') {
+          const itemsProvided = [];
+          const itemsNotProvided = [];
+          const pe = approvalDetails.provideEquipment;
+          if (pe && typeof pe === 'object') {
+            for (const [key, label] of Object.entries(equipmentLabels)) {
+              const requested = booking[equipmentToDb[key]];
+              if (requested) {
+                if (pe[key] !== false) itemsProvided.push(label);
+                else itemsNotProvided.push(label);
+              }
+            }
+          }
+          if (booking.catering_option && booking.catering_option !== 'NONE') {
+            const cateringLabel = booking.catering_option === 'TEA_COFFEE_WATER' ? 'Tea/Coffee & Water' : 'Light snacks';
+            if (approvalDetails.provideCatering !== false) itemsProvided.push(cateringLabel);
+            else itemsNotProvided.push(cateringLabel);
+          }
+          emailOptions = {
+            itemsProvided,
+            itemsNotProvided,
+            adminComments: approvalDetails.adminComments,
+          };
+        }
+
+        emailService.notifyUserBookingApproved(bookingForEmail, emailOptions).catch(err => {
           console.error('Failed to send booking confirmation email:', err);
         });
       }
-      
+
       res.json({ message: `Booking status updated to ${status}` });
     } else {
       // Non-admins can only cancel their own bookings

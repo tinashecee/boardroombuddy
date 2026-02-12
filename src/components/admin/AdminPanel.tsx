@@ -23,6 +23,7 @@ import { useNavigate } from "react-router-dom";
 import { UserManagement } from "./UserManagement";
 import { AdminOrganizations } from "./AdminOrganizations";
 import { BookingDetailsDialog } from "./BookingDetailsDialog";
+import { ApproveBookingModal } from "./ApproveBookingModal";
 import { Booking } from "@/types/booking";
 
 interface PendingUser {
@@ -41,6 +42,7 @@ export const AdminPanel = () => {
     const [isLoadingUsers, setIsLoadingUsers] = useState(true);
     const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
     const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+    const [approvalModalBooking, setApprovalModalBooking] = useState<Booking | null>(null);
 
     useEffect(() => {
         fetchPendingUsers();
@@ -311,10 +313,7 @@ export const AdminPanel = () => {
                                                         variant="default"
                                                         size="icon"
                                                         className="h-8 w-8 bg-green-600 hover:bg-green-700"
-                                                        onClick={() => {
-                                                            approveBooking(booking.id);
-                                                            toast.success("Booking approved!");
-                                                        }}
+                                                        onClick={() => setApprovalModalBooking(booking)}
                                                     >
                                                         <Check className="w-4 h-4" />
                                                     </Button>
@@ -363,6 +362,17 @@ export const AdminPanel = () => {
                 booking={selectedBooking}
                 open={isDetailsDialogOpen}
                 onOpenChange={setIsDetailsDialogOpen}
+            />
+            <ApproveBookingModal
+                booking={approvalModalBooking}
+                open={!!approvalModalBooking}
+                onOpenChange={(open) => !open && setApprovalModalBooking(null)}
+                onConfirm={(approvalDetails) => {
+                    if (!approvalModalBooking) return;
+                    approveBooking(approvalModalBooking.id, approvalDetails);
+                    setApprovalModalBooking(null);
+                    toast.success("Booking approved!");
+                }}
             />
         </div>
     );

@@ -98,12 +98,13 @@ async function notifyAdminsNewBooking(booking, user) {
 }
 
 // Send confirmation email to user when booking is approved
-async function notifyUserBookingApproved(booking) {
+// options: { itemsProvided: string[], itemsNotProvided: string[], adminComments?: string }
+async function notifyUserBookingApproved(booking, options) {
   if (!transporter) {
     console.log('Email service not available - skipping booking confirmation');
     return;
   }
-  
+
   try {
     // Get user details
     const db = require('../db');
@@ -128,6 +129,26 @@ async function notifyUserBookingApproved(booking) {
       day: 'numeric'
     });
 
+    let supplySection = '';
+    if (options && (options.itemsProvided?.length || options.itemsNotProvided?.length || (options.adminComments && options.adminComments.trim()))) {
+      const providedList = options.itemsProvided && options.itemsProvided.length
+        ? `<ul style="margin: 0 0 12px 0; padding-left: 20px;">${options.itemsProvided.map((item) => `<li>${item}</li>`).join('')}</ul>`
+        : '<p style="margin: 0 0 12px 0;">None.</p>';
+      const notProvidedBlock = options.itemsNotProvided && options.itemsNotProvided.length
+        ? `<p style="margin: 12px 0 4px 0; font-weight: 600;">What we will not provide:</p><ul style="margin: 0; padding-left: 20px;">${options.itemsNotProvided.map((item) => `<li>${item}</li>`).join('')}</ul>`
+        : '';
+      const commentsBlock = options.adminComments && options.adminComments.trim()
+        ? `<p style="margin: 16px 0 0 0; font-weight: 600;">Comments from the team:</p><p style="margin: 4px 0 0 0; white-space: pre-wrap;">${options.adminComments.trim()}</p>`
+        : '';
+      supplySection = `
+          <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2563eb;">
+            <h3 style="margin-top: 0; color: #1f2937;">What we will provide</h3>
+            ${providedList}
+            ${notProvidedBlock}
+            ${commentsBlock}
+          </div>`;
+    }
+
     const mailOptions = {
       from: '"Boardroom Buddy" <labpartnerswebportal@gmail.com>',
       to: user.email,
@@ -147,6 +168,7 @@ async function notifyUserBookingApproved(booking) {
             <p><strong>Attendees:</strong> ${booking.attendees}</p>
             ${booking.purpose ? `<p><strong>Purpose:</strong> ${booking.purpose}</p>` : ''}
           </div>
+          ${supplySection}
           
           <p style="color: #6b7280; font-size: 14px;">
             If you need to cancel or modify this booking, please log in to your account.

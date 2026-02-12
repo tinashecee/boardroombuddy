@@ -22,6 +22,22 @@ export interface Booking {
   durationHours?: number | null;
   status: 'confirmed' | 'pending' | 'cancelled';
   createdAt: string;
+  /** Set when an admin confirms the booking; included in confirmation email. */
+  adminApprovalComments?: string;
+}
+
+/** Sent when admin confirms a booking via the approval modal. */
+export interface ApprovalDetails {
+  provideEquipment?: {
+    displayScreen?: boolean;
+    videoConferencing?: boolean;
+    projector?: boolean;
+    whiteboard?: boolean;
+    conferencePhone?: boolean;
+    extensionPower?: boolean;
+  };
+  provideCatering?: boolean;
+  adminComments?: string;
 }
 
 export interface TimeSlot {

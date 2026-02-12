@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Booking, BookingFormData, TIME_SLOTS } from '@/types/booking';
+import { Booking, BookingFormData, ApprovalDetails, TIME_SLOTS } from '@/types/booking';
 import { useAuth } from './useAuth';
 
 const API_URL = '/api/bookings';
@@ -156,16 +156,17 @@ export function useBookings() {
     [checkTimeSlotAvailability, user?.id]
   );
 
-  const updateBookingStatus = useCallback(async (bookingId: string, status: string) => {
+  const updateBookingStatus = useCallback(async (bookingId: string, status: string, extraBody?: Record<string, unknown>) => {
     try {
       const token = localStorage.getItem('bb_token');
+      const body = extraBody ? { status, ...extraBody } : { status };
       const response = await fetch(`${API_URL}/${bookingId}/status`, {
         method: 'PATCH',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify(body),
       });
 
       if (response.ok) {
@@ -189,8 +190,12 @@ export function useBookings() {
     updateBookingStatus(bookingId, 'cancelled');
   }, [updateBookingStatus]);
 
-  const approveBooking = useCallback((bookingId: string) => {
-    updateBookingStatus(bookingId, 'confirmed');
+  const approveBooking = useCallback((bookingId: string, approvalDetails?: ApprovalDetails) => {
+    if (approvalDetails) {
+      updateBookingStatus(bookingId, 'confirmed', { approvalDetails });
+    } else {
+      updateBookingStatus(bookingId, 'confirmed');
+    }
   }, [updateBookingStatus]);
 
   const rejectBooking = useCallback((bookingId: string) => {
