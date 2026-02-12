@@ -481,16 +481,32 @@ router.patch('/:id/status', async (req, res) => {
           fields.push('catering_option = ?');
           params.push('NONE');
         }
-        if (approvalDetails.adminComments !== undefined) {
+        const includeComments = approvalDetails.adminComments !== undefined;
+        if (includeComments) {
           fields.push('admin_approval_comments = ?');
           params.push(approvalDetails.adminComments == null ? null : String(approvalDetails.adminComments));
         }
 
         params.push(id);
-        await db.query(
-          `UPDATE bookings SET ${fields.join(', ')} WHERE id = ?`,
-          params
-        );
+        try {
+          await db.query(
+            `UPDATE bookings SET ${fields.join(', ')} WHERE id = ?`,
+            params
+          );
+        } catch (updateErr) {
+          if (includeComments && (updateErr.code === 'ER_BAD_FIELD_ERROR' || (updateErr.message && updateErr.message.includes('admin_approval_comments')))) {
+            fields.pop();
+            params.pop();
+            params.pop();
+            params.push(id);
+            await db.query(
+              `UPDATE bookings SET ${fields.join(', ')} WHERE id = ?`,
+              params
+            );
+          } else {
+            throw updateErr;
+          }
+        }
       } else {
         await db.query('UPDATE bookings SET status = ? WHERE id = ?', [status, id]);
       }

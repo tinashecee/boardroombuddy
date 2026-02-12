@@ -180,12 +180,15 @@ export function useBookings() {
             booking.id === bookingId ? { ...booking, status: status as any } : booking
           )
         );
-        if (status === 'confirmed') {
-          fetchBookings();
-        }
+        fetchBookings();
+      } else {
+        const data = await response.json().catch(() => ({}));
+        const message = (data && typeof data.message === 'string') ? data.message : `Failed to update booking (${response.status})`;
+        throw new Error(message);
       }
     } catch (error) {
       console.error('Error updating booking status:', error);
+      throw error;
     }
   }, [fetchBookings]);
 
@@ -195,14 +198,13 @@ export function useBookings() {
 
   const approveBooking = useCallback((bookingId: string, approvalDetails?: ApprovalDetails) => {
     if (approvalDetails) {
-      updateBookingStatus(bookingId, 'confirmed', { approvalDetails });
-    } else {
-      updateBookingStatus(bookingId, 'confirmed');
+      return updateBookingStatus(bookingId, 'confirmed', { approvalDetails });
     }
+    return updateBookingStatus(bookingId, 'confirmed');
   }, [updateBookingStatus]);
 
   const rejectBooking = useCallback((bookingId: string) => {
-    updateBookingStatus(bookingId, 'cancelled');
+    return updateBookingStatus(bookingId, 'cancelled');
   }, [updateBookingStatus]);
 
   const getUpcomingBookings = useCallback(() => {

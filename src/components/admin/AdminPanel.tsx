@@ -302,9 +302,13 @@ export const AdminPanel = () => {
                                                         variant="outline"
                                                         size="icon"
                                                         className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                                                        onClick={() => {
-                                                            rejectBooking(booking.id);
-                                                            toast.error("Booking rejected");
+                                                        onClick={async () => {
+                                                            try {
+                                                                await rejectBooking(booking.id);
+                                                                toast.success("Booking rejected");
+                                                            } catch {
+                                                                toast.error("Failed to reject booking");
+                                                            }
                                                         }}
                                                     >
                                                         <X className="w-4 h-4" />
@@ -367,11 +371,15 @@ export const AdminPanel = () => {
                 booking={approvalModalBooking}
                 open={!!approvalModalBooking}
                 onOpenChange={(open) => !open && setApprovalModalBooking(null)}
-                onConfirm={(approvalDetails) => {
+                onConfirm={async (approvalDetails) => {
                     if (!approvalModalBooking) return;
-                    approveBooking(approvalModalBooking.id, approvalDetails);
-                    setApprovalModalBooking(null);
-                    toast.success("Booking approved!");
+                    try {
+                        await approveBooking(approvalModalBooking.id, approvalDetails);
+                        setApprovalModalBooking(null);
+                        toast.success("Booking approved!");
+                    } catch {
+                        toast.error("Failed to approve booking");
+                    }
                 }}
             />
         </div>
