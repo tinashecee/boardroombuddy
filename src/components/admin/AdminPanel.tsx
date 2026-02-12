@@ -125,37 +125,37 @@ export const AdminPanel = () => {
                 <TabsList className="grid w-full max-w-2xl grid-cols-5 gap-2 bg-transparent p-0">
                     <TabsTrigger
                         value="approvals"
-                        className="gap-2 rounded-lg border border-border px-4 py-2 data-[state=active]:bg-background data-[state=active]:border-primary"
+                        className="gap-2 rounded-lg border border-border px-5 py-3 text-left text-sm whitespace-normal min-h-[3rem] data-[state=active]:bg-background data-[state=active]:border-primary"
                     >
-                        <Users className="h-4 w-4" />
+                        <Users className="h-4 w-4 shrink-0" />
                         Account Approvals
                     </TabsTrigger>
                     <TabsTrigger
                         value="bookings"
-                        className="gap-2 rounded-lg border border-border px-4 py-2 data-[state=active]:bg-background data-[state=active]:border-primary"
+                        className="gap-2 rounded-lg border border-border px-5 py-3 text-left text-sm whitespace-normal min-h-[3rem] data-[state=active]:bg-background data-[state=active]:border-primary"
                     >
-                        <CalendarCheck className="h-4 w-4" />
+                        <CalendarCheck className="h-4 w-4 shrink-0" />
                         Booking Requests
                     </TabsTrigger>
                     <TabsTrigger
                         value="users"
-                        className="gap-2 rounded-lg border border-border px-4 py-2 data-[state=active]:bg-background data-[state=active]:border-primary"
+                        className="gap-2 rounded-lg border border-border px-5 py-3 text-left text-sm whitespace-normal min-h-[3rem] data-[state=active]:bg-background data-[state=active]:border-primary"
                     >
-                        <UserCog className="h-4 w-4" />
+                        <UserCog className="h-4 w-4 shrink-0" />
                         User Management
                     </TabsTrigger>
                     <TabsTrigger
                         value="organizations"
-                        className="gap-2 rounded-lg border border-border px-4 py-2 data-[state=active]:bg-background data-[state=active]:border-primary"
+                        className="gap-2 rounded-lg border border-border px-5 py-3 text-left text-sm whitespace-normal min-h-[3rem] data-[state=active]:bg-background data-[state=active]:border-primary"
                     >
-                        <Users className="h-4 w-4" />
+                        <Users className="h-4 w-4 shrink-0" />
                         Organizations
                     </TabsTrigger>
                     <TabsTrigger
                         value="reports"
-                        className="gap-2 rounded-lg border border-border px-4 py-2 data-[state=active]:bg-background data-[state=active]:border-primary"
+                        className="gap-2 rounded-lg border border-border px-5 py-3 text-left text-sm whitespace-normal min-h-[3rem] data-[state=active]:bg-background data-[state=active]:border-primary"
                     >
-                        <BarChart3 className="h-4 w-4" />
+                        <BarChart3 className="h-4 w-4 shrink-0" />
                         Reports
                     </TabsTrigger>
                 </TabsList>
