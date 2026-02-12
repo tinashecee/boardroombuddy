@@ -51,41 +51,35 @@ export function ApproveBookingModal({
   const [provideEquipment, setProvideEquipment] = useState<
     Record<string, boolean>
   >({});
-  const [provideCatering, setProvideCatering] = useState(true);
+  const [provideCateringTeaCoffee, setProvideCateringTeaCoffee] = useState(false);
+  const [provideCateringSnacks, setProvideCateringSnacks] = useState(false);
   const [adminComments, setAdminComments] = useState("");
-
-  const hasCatering =
-    booking?.cateringOption &&
-    booking.cateringOption !== "NONE";
-
-  const requestedEquipment = EQUIPMENT_ITEMS.filter(
-    (item) => booking && booking[item.bookingKey]
-  );
 
   useEffect(() => {
     if (!booking || !open) return;
-    const requested = EQUIPMENT_ITEMS.filter((item) => booking[item.bookingKey]);
-    const initial: Record<string, boolean> = {};
-    requested.forEach((item) => {
-      initial[item.provideKey] = true;
+    const initialEquip: Record<string, boolean> = {};
+    EQUIPMENT_ITEMS.forEach((item) => {
+      initialEquip[item.provideKey] = !!booking[item.bookingKey];
     });
-    setProvideEquipment(initial);
-    setProvideCatering(true);
+    setProvideEquipment(initialEquip);
+    setProvideCateringTeaCoffee(
+      booking.cateringOption === "TEA_COFFEE_WATER" || booking.cateringOption === "LIGHT_SNACKS"
+    );
+    setProvideCateringSnacks(booking.cateringOption === "LIGHT_SNACKS");
     setAdminComments("");
   }, [booking, open]);
 
   const handleSubmit = () => {
     if (!booking) return;
     const provideEquipmentPayload: ApprovalDetails["provideEquipment"] = {};
-    requestedEquipment.forEach((item) => {
+    EQUIPMENT_ITEMS.forEach((item) => {
       provideEquipmentPayload[item.provideKey] =
-        provideEquipment[item.provideKey] !== false;
+        provideEquipment[item.provideKey] === true;
     });
     onConfirm({
-      provideEquipment: Object.keys(provideEquipmentPayload).length
-        ? provideEquipmentPayload
-        : undefined,
-      provideCatering: hasCatering ? provideCatering : undefined,
+      provideEquipment: provideEquipmentPayload,
+      provideCateringTeaCoffee,
+      provideCateringSnacks,
       adminComments: adminComments.trim() || undefined,
     });
     onOpenChange(false);
@@ -108,65 +102,85 @@ export function ApproveBookingModal({
         </DialogHeader>
 
         <div className="space-y-6 py-2">
-          {requestedEquipment.length > 0 && (
-            <div className="space-y-3">
-              <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-                Equipment
-              </h3>
-              <div className="space-y-2">
-                {requestedEquipment.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <div
-                      key={item.provideKey}
-                      className="flex items-center space-x-2"
-                    >
-                      <Checkbox
-                        id={`equip-${item.provideKey}`}
-                        checked={provideEquipment[item.provideKey] !== false}
-                        onCheckedChange={(checked) =>
-                          setProvideEquipment((prev) => ({
-                            ...prev,
-                            [item.provideKey]: checked !== false,
-                          }))
-                        }
-                      />
-                      <Label
-                        htmlFor={`equip-${item.provideKey}`}
-                        className="flex items-center gap-2 text-sm font-normal cursor-pointer"
-                      >
-                        <Icon className="w-4 h-4 text-muted-foreground" />
-                        We will provide {item.label}
-                      </Label>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {hasCatering && (
+          <div className="space-y-3">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+              Equipment
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Tick everything you will provide. You can add items the user did not request.
+            </p>
             <div className="space-y-2">
-              <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-                Catering
-              </h3>
+              {EQUIPMENT_ITEMS.map((item) => {
+                const Icon = item.icon;
+                const requested = !!booking[item.bookingKey];
+                return (
+                  <div
+                    key={item.provideKey}
+                    className="flex items-center space-x-2"
+                  >
+                    <Checkbox
+                      id={`equip-${item.provideKey}`}
+                      checked={provideEquipment[item.provideKey] === true}
+                      onCheckedChange={(checked) =>
+                        setProvideEquipment((prev) => ({
+                          ...prev,
+                          [item.provideKey]: checked === true,
+                        }))
+                      }
+                    />
+                    <Label
+                      htmlFor={`equip-${item.provideKey}`}
+                      className="flex items-center gap-2 text-sm font-normal cursor-pointer"
+                    >
+                      <Icon className="w-4 h-4 text-muted-foreground" />
+                      We will provide {item.label}
+                      {requested && (
+                        <span className="text-xs text-muted-foreground">(requested)</span>
+                      )}
+                    </Label>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+              Catering
+            </h3>
+            <div className="space-y-2">
               <div className="flex items-center space-x-2">
                 <Checkbox
-                  id="provide-catering"
-                  checked={provideCatering}
+                  id="provide-tea"
+                  checked={provideCateringTeaCoffee}
                   onCheckedChange={(checked) =>
-                    setProvideCatering(checked === true)
+                    setProvideCateringTeaCoffee(checked === true)
                   }
                 />
-                <Label
-                  htmlFor="provide-catering"
-                  className="text-sm font-normal cursor-pointer"
-                >
-                  We will provide requested catering
+                <Label htmlFor="provide-tea" className="text-sm font-normal cursor-pointer">
+                  We will provide Tea/Coffee &amp; Water
+                  {(booking.cateringOption === "TEA_COFFEE_WATER" || booking.cateringOption === "LIGHT_SNACKS") && (
+                    <span className="text-xs text-muted-foreground ml-1">(requested)</span>
+                  )}
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="provide-snacks"
+                  checked={provideCateringSnacks}
+                  onCheckedChange={(checked) =>
+                    setProvideCateringSnacks(checked === true)
+                  }
+                />
+                <Label htmlFor="provide-snacks" className="text-sm font-normal cursor-pointer">
+                  We will provide Light snacks
+                  {booking.cateringOption === "LIGHT_SNACKS" && (
+                    <span className="text-xs text-muted-foreground ml-1">(requested)</span>
+                  )}
                 </Label>
               </div>
             </div>
-          )}
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="admin-comments" className="text-sm">

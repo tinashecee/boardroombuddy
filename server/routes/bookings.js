@@ -465,13 +465,19 @@ router.patch('/:id/status', async (req, res) => {
         const pe = approvalDetails.provideEquipment;
         if (pe && typeof pe === 'object') {
           for (const [key, dbCol] of Object.entries(equipmentToDb)) {
-            if (pe[key] === false) {
+            if (pe[key] === true || pe[key] === false) {
               fields.push(`${dbCol} = ?`);
-              params.push(false);
+              params.push(!!pe[key]);
             }
           }
         }
-        if (approvalDetails.provideCatering === false) {
+        if ('provideCateringTeaCoffee' in approvalDetails || 'provideCateringSnacks' in approvalDetails) {
+          const tea = !!approvalDetails.provideCateringTeaCoffee;
+          const snacks = !!approvalDetails.provideCateringSnacks;
+          const cateringValue = snacks ? 'LIGHT_SNACKS' : tea ? 'TEA_COFFEE_WATER' : 'NONE';
+          fields.push('catering_option = ?');
+          params.push(cateringValue);
+        } else if (approvalDetails.provideCatering === false) {
           fields.push('catering_option = ?');
           params.push('NONE');
         }
@@ -511,18 +517,18 @@ router.patch('/:id/status', async (req, res) => {
           const pe = approvalDetails.provideEquipment;
           if (pe && typeof pe === 'object') {
             for (const [key, label] of Object.entries(equipmentLabels)) {
-              const requested = booking[equipmentToDb[key]];
-              if (requested) {
-                if (pe[key] !== false) itemsProvided.push(label);
-                else itemsNotProvided.push(label);
-              }
+              if (pe[key] === true) itemsProvided.push(label);
+              else if (booking[equipmentToDb[key]]) itemsNotProvided.push(label);
             }
           }
-          if (booking.catering_option && booking.catering_option !== 'NONE') {
-            const cateringLabel = booking.catering_option === 'TEA_COFFEE_WATER' ? 'Tea/Coffee & Water' : 'Light snacks';
-            if (approvalDetails.provideCatering !== false) itemsProvided.push(cateringLabel);
-            else itemsNotProvided.push(cateringLabel);
+          const tea = approvalDetails.provideCateringTeaCoffee === true;
+          const snacks = approvalDetails.provideCateringSnacks === true;
+          if (tea) itemsProvided.push('Tea/Coffee & Water');
+          else if (booking.catering_option === 'TEA_COFFEE_WATER' || booking.catering_option === 'LIGHT_SNACKS') {
+            itemsNotProvided.push('Tea/Coffee & Water');
           }
+          if (snacks) itemsProvided.push('Light snacks');
+          else if (booking.catering_option === 'LIGHT_SNACKS') itemsNotProvided.push('Light snacks');
           emailOptions = {
             itemsProvided,
             itemsNotProvided,

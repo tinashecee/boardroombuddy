@@ -36,7 +36,10 @@ export interface ApprovalDetails {
     conferencePhone?: boolean;
     extensionPower?: boolean;
   };
-  provideCatering?: boolean;
+  /** Whether to provide Tea/Coffee & Water (can be selected even if not requested). */
+  provideCateringTeaCoffee?: boolean;
+  /** Whether to provide Light snacks (can be selected even if not requested). */
+  provideCateringSnacks?: boolean;
   adminComments?: string;
 }
 

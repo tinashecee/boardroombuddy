@@ -180,11 +180,14 @@ export function useBookings() {
             booking.id === bookingId ? { ...booking, status: status as any } : booking
           )
         );
+        if (status === 'confirmed') {
+          fetchBookings();
+        }
       }
     } catch (error) {
       console.error('Error updating booking status:', error);
     }
-  }, []);
+  }, [fetchBookings]);
 
   const cancelBooking = useCallback((bookingId: string) => {
     updateBookingStatus(bookingId, 'cancelled');
