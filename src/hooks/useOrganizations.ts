@@ -6,6 +6,8 @@ export interface Organization {
     is_tenant?: boolean;
     monthly_free_hours?: number;
     used_free_hours_this_month?: number;
+    /** Read-only: confirmed meeting hours that have already transpired this month (from API). */
+    computed_used_hours_this_month?: number;
     billing_rate_per_hour?: number | null;
 }
 

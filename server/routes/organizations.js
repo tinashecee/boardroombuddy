@@ -3,11 +3,35 @@ const router = express.Router();
 const db = require('../db');
 const jwt = require('jsonwebtoken');
 
-// Get all organizations
+// Get all organizations with computed "used this month" (confirmed, past bookings in current month)
 router.get('/', async (req, res) => {
   try {
     const [rows] = await db.query('SELECT * FROM organizations ORDER BY name ASC');
-    res.json(rows);
+    const firstOfMonth = new Date();
+    firstOfMonth.setDate(1);
+    firstOfMonth.setHours(0, 0, 0, 0);
+    const firstStr = firstOfMonth.toISOString().slice(0, 10);
+    const [usedRows] = await db.query(
+      `SELECT organization_name, SUM(duration_hours) AS used_hours
+       FROM bookings
+       WHERE status = 'confirmed'
+         AND booking_date >= ?
+         AND booking_date < CURDATE()
+         AND duration_hours IS NOT NULL
+       GROUP BY organization_name`,
+      [firstStr]
+    );
+    const usedByOrg = new Map();
+    for (const row of usedRows) {
+      const key = (row.organization_name || '').trim().toLowerCase();
+      usedByOrg.set(key, Number(row.used_hours) || 0);
+    }
+    const result = rows.map((org) => {
+      const key = (org.name || '').trim().toLowerCase();
+      const computedUsed = usedByOrg.get(key) ?? 0;
+      return { ...org, computed_used_hours_this_month: computedUsed };
+    });
+    res.json(result);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error fetching organizations' });
