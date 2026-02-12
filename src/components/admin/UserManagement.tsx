@@ -34,6 +34,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Edit, UserCog, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useOrganizations } from "@/hooks/useOrganizations";
 
 interface User {
     id: string;
@@ -59,6 +60,7 @@ export const UserManagement = () => {
         role: 'USER' as 'ADMIN' | 'USER',
         isApproved: true,
     });
+    const { organizations, isLoading: orgsLoading } = useOrganizations();
 
     useEffect(() => {
         fetchUsers();
@@ -232,12 +234,36 @@ export const UserManagement = () => {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium">Company Name</label>
-                                <Input
-                                    value={formData.companyName}
-                                    onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                                    placeholder="Company name"
-                                />
+                                <label className="text-sm font-medium">Organization</label>
+                                {organizations.length > 0 ? (
+                                    <Select
+                                        value={formData.companyName}
+                                        onValueChange={(value) => setFormData({ ...formData, companyName: value })}
+                                        disabled={orgsLoading}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder={orgsLoading ? "Loading organizations..." : "Select organization"} />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {organizations.map((org) => (
+                                                <SelectItem key={org.id} value={org.name}>
+                                                    {org.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                ) : (
+                                    <Input
+                                        value={formData.companyName}
+                                        onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                                        placeholder="Organization name"
+                                    />
+                                )}
+                                {organizations.length === 0 && (
+                                    <p className="text-xs text-muted-foreground">
+                                        No organizations configured yet. Configure them in Organizations & Tenant Settings.
+                                    </p>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-medium">Role</label>

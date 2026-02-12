@@ -14,6 +14,29 @@ try {
   emailService = null;
 }
 
+// Helper: check if an organization name exists in organizations table (case-insensitive, trimmed)
+async function organizationExists(companyName) {
+  if (!companyName) return false;
+  const normalized = companyName.trim().toLowerCase();
+  const [rows] = await db.query(
+    'SELECT id FROM organizations WHERE LOWER(TRIM(name)) = ?',
+    [normalized]
+  );
+  return rows.length > 0;
+}
+
+// Helper: allow signup/edit without org only if there are no organizations configured
+async function validateOrganizationOrAllowWhenEmpty(companyName) {
+  const [orgs] = await db.query('SELECT id, name FROM organizations');
+  if (orgs.length === 0) {
+    // No organizations configured yet – allow any value (or empty)
+    return true;
+  }
+  // When organizations exist, companyName must be present and match one of them
+  if (!companyName) return false;
+  return organizationExists(companyName);
+}
+
 // Signup
 router.post('/signup', async (req, res) => {
   const { name, email, companyName, password } = req.body;
@@ -23,6 +46,12 @@ router.post('/signup', async (req, res) => {
   }
 
   try {
+    // Validate organization against existing organizations (when any exist)
+    const isOrgValid = await validateOrganizationOrAllowWhenEmpty(companyName);
+    if (!isOrgValid) {
+      return res.status(400).json({ message: 'Invalid organization. Please select a valid organization.' });
+    }
+
     const passwordHash = await bcrypt.hash(password, 10);
     const userId = crypto.randomUUID();
     
@@ -229,6 +258,14 @@ router.patch('/users/:id', async (req, res) => {
 
     const { id } = req.params;
     const { name, email, companyName, role, isApproved } = req.body;
+
+    // If companyName is being changed, validate it against organizations when any exist
+    if (companyName !== undefined) {
+      const isOrgValid = await validateOrganizationOrAllowWhenEmpty(companyName);
+      if (!isOrgValid) {
+        return res.status(400).json({ message: 'Invalid organization. Please select a valid organization.' });
+      }
+    }
 
     // Build update query dynamically based on provided fields
     const updates = [];

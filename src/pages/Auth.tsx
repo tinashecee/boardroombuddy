@@ -15,11 +15,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Building2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { useOrganizations } from "@/hooks/useOrganizations";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 const Auth = () => {
     const { login, signup } = useAuth();
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
+    const { organizations, isLoading: orgsLoading } = useOrganizations();
 
     // Form states
     const [email, setEmail] = useState("");
@@ -49,6 +58,12 @@ const Auth = () => {
         e.preventDefault();
         setIsLoading(true);
         try {
+            // If organizations exist, companyName must be selected
+            if (organizations.length > 0 && !companyName) {
+                toast.error("Please select your organization.");
+                setIsLoading(false);
+                return;
+            }
             const result = await signup(name, email, companyName, password);
             if (result.success) {
                 toast.success("Account created! Please wait for admin approval before logging in.");
@@ -157,15 +172,38 @@ const Auth = () => {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="signup-company">Company Name</Label>
-                                        <Input
-                                            id="signup-company"
-                                            placeholder="Acme Corp"
-                                            required
-                                            value={companyName}
-                                            onChange={(e) => setCompanyName(e.target.value)}
-                                            className="bg-muted/50"
-                                        />
+                                        <Label htmlFor="signup-company">Organization</Label>
+                                        {organizations.length > 0 ? (
+                                            <Select
+                                                value={companyName}
+                                                onValueChange={setCompanyName}
+                                                disabled={orgsLoading}
+                                            >
+                                                <SelectTrigger id="signup-company" className="bg-muted/50">
+                                                    <SelectValue placeholder={orgsLoading ? "Loading organizations..." : "Select organization"} />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {organizations.map((org) => (
+                                                        <SelectItem key={org.id} value={org.name}>
+                                                            {org.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        ) : (
+                                            <Input
+                                                id="signup-company"
+                                                placeholder="Organization name"
+                                                value={companyName}
+                                                onChange={(e) => setCompanyName(e.target.value)}
+                                                className="bg-muted/50"
+                                            />
+                                        )}
+                                        {organizations.length === 0 && (
+                                            <p className="text-xs text-muted-foreground">
+                                                No organizations configured yet. You can enter your organization name for now.
+                                            </p>
+                                        )}
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="signup-password">Password</Label>
