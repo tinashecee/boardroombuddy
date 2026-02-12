@@ -33,12 +33,15 @@ export function useOrganizations() {
         fetchOrgs();
     }, []);
 
-    const addOrganization = async (name: string) => {
+    const addOrganization = async (name: string, options?: { isTenant?: boolean }) => {
         try {
+            const isTenant = options?.isTenant ?? false;
+            const body: Record<string, unknown> = { name, isTenant };
+            if (isTenant) body.monthlyFreeHours = 10;
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name }),
+                body: JSON.stringify(body),
             });
             if (!response.ok) throw new Error('Failed to add organization');
             const newOrg = await response.json();

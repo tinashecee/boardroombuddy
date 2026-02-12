@@ -9,11 +9,12 @@ import { BookingFormData, TIME_SLOTS } from '@/types/booking';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useOrganizations } from '@/hooks/useOrganizations';
+import { toast } from 'sonner';
 
 interface BookingFormProps {
   selectedDate: Date;
   initialStartTime?: string;
-  onSubmit: (data: BookingFormData) => Promise<{ success: boolean; error?: string }>;
+  onSubmit: (data: BookingFormData) => Promise<{ success: boolean; error?: string; billingMessage?: string }>;
   onClose: () => void;
 }
 
@@ -46,6 +47,7 @@ export function BookingForm({ selectedDate, initialStartTime, onSubmit, onClose 
 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [billingMessage, setBillingMessage] = useState<string | null>(null);
 
   function getDefaultEndTime(startTime: string): string {
     const [hours, minutes] = startTime.split(':').map(Number);
@@ -65,13 +67,17 @@ export function BookingForm({ selectedDate, initialStartTime, onSubmit, onClose 
 
     try {
       const result = await onSubmit(formData);
-    if (result.success) {
-      setSuccess(true);
-      setTimeout(() => {
-        onClose();
-      }, 1500);
-    } else {
-      setError(result.error || 'Failed to create booking');
+      if (result.success) {
+        setSuccess(true);
+        if (result.billingMessage) {
+          setBillingMessage(result.billingMessage);
+          toast.info(result.billingMessage, { duration: 5000 });
+        }
+        setTimeout(() => {
+          onClose();
+        }, 1500);
+      } else {
+        setError(result.error || 'Failed to create booking');
       }
     } catch (error) {
       setError('Failed to create booking. Please try again.');
@@ -99,6 +105,11 @@ export function BookingForm({ selectedDate, initialStartTime, onSubmit, onClose 
           <p className="text-muted-foreground">
             Your boardroom has been booked for {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
           </p>
+          {billingMessage && (
+            <p className="mt-3 text-sm text-muted-foreground border-t pt-3">
+              {billingMessage}
+            </p>
+          )}
         </div>
       </div>
     );

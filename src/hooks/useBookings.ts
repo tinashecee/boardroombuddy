@@ -141,7 +141,11 @@ export function useBookings() {
           const newBooking = await response.json();
           setBookings((prev) => [...prev, newBooking]);
           setAllBookings((prev) => [...prev, newBooking]);
-          return { success: true, booking: newBooking };
+          return {
+            success: true,
+            booking: newBooking,
+            billingMessage: newBooking.billingMessage,
+          };
         } else {
           return { success: false, error: 'Failed to create booking' };
         }

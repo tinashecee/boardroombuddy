@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const jwt = require('jsonwebtoken');
 
 // Get all organizations
 router.get('/', async (req, res) => {
@@ -18,6 +19,12 @@ router.post('/', async (req, res) => {
   const { name, isTenant, monthlyFreeHours, billingRatePerHour } = req.body;
   if (!name) return res.status(400).json({ message: 'Name is required' });
 
+  const isTenantBool = !!isTenant;
+  // When tenant, default to 10 hours if not provided; otherwise 0 or provided value
+  const initialMonthlyHours = isTenantBool
+    ? (monthlyFreeHours != null ? Number(monthlyFreeHours) : 10)
+    : (monthlyFreeHours != null ? Number(monthlyFreeHours) : 0);
+
   try {
     const id = require('crypto').randomUUID();
     await db.query(
@@ -32,16 +39,16 @@ router.post('/', async (req, res) => {
       [
         id,
         name,
-        !!isTenant,
-        monthlyFreeHours != null ? monthlyFreeHours : 0,
+        isTenantBool,
+        initialMonthlyHours,
         billingRatePerHour != null ? billingRatePerHour : null
       ]
     );
     res.status(201).json({
       id,
       name,
-      is_tenant: !!isTenant,
-      monthly_free_hours: monthlyFreeHours != null ? monthlyFreeHours : 0,
+      is_tenant: isTenantBool,
+      monthly_free_hours: initialMonthlyHours,
       used_free_hours_this_month: 0,
       billing_rate_per_hour: billingRatePerHour != null ? billingRatePerHour : null
     });
@@ -51,6 +58,35 @@ router.post('/', async (req, res) => {
     }
     console.error(error);
     res.status(500).json({ message: 'Error creating organization' });
+  }
+});
+
+// Reset tenant balances to 10 hours for the new month (admin-only). Excludes Lab Partners.
+router.post('/reset-tenant-balances', async (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ message: 'No token provided' });
+  }
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const [users] = await db.query('SELECT id, role FROM users WHERE id = ?', [decoded.id]);
+    const user = users[0];
+    if (!user || user.role !== 'ADMIN') {
+      return res.status(403).json({ message: 'Only admins can reset tenant balances' });
+    }
+    const [result] = await db.query(
+      `UPDATE organizations
+       SET monthly_free_hours = 10, used_free_hours_this_month = 0
+       WHERE is_tenant = TRUE AND LOWER(TRIM(name)) != 'lab partners'`
+    );
+    const affected = result.affectedRows ?? 0;
+    res.json({ message: 'Tenant balances reset to 10 hours', updatedCount: affected });
+  } catch (error) {
+    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Invalid or expired token' });
+    }
+    console.error(error);
+    res.status(500).json({ message: 'Error resetting tenant balances' });
   }
 });
 

@@ -26,11 +26,12 @@ export const AdminOrganizations = () => {
     useOrganizations();
 
   const [newOrgName, setNewOrgName] = useState("");
+  const [newOrgIsTenant, setNewOrgIsTenant] = useState(false);
 
   const handleAddOrg = async () => {
     if (!newOrgName.trim()) return;
     try {
-      await addOrganization(newOrgName.trim());
+      await addOrganization(newOrgName.trim(), { isTenant: newOrgIsTenant });
       toast.success("Organization added");
       setNewOrgName("");
     } catch {
@@ -49,7 +50,7 @@ export const AdminOrganizations = () => {
 
   const handleNumberChange = async (
     id: string,
-    field: "monthly_free_hours" | "billing_rate_per_hour",
+    field: "monthly_free_hours" | "used_free_hours_this_month" | "billing_rate_per_hour",
     value: string
   ) => {
     const num = value === "" ? 0 : Number(value);
@@ -74,16 +75,29 @@ export const AdminOrganizations = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="flex gap-2 items-end max-w-md">
-          <div className="flex-1 space-y-1">
-            <label className="text-sm font-medium">Add Organization</label>
-            <Input
-              placeholder="Organization name"
-              value={newOrgName}
-              onChange={(e) => setNewOrgName(e.target.value)}
-            />
+        <div className="space-y-3 max-w-xl">
+          <div className="flex gap-2 items-end flex-wrap">
+            <div className="flex-1 min-w-[200px] space-y-1">
+              <label className="text-sm font-medium">Add Organization</label>
+              <Input
+                placeholder="Organization name"
+                value={newOrgName}
+                onChange={(e) => setNewOrgName(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="new-org-tenant"
+                checked={newOrgIsTenant}
+                onCheckedChange={setNewOrgIsTenant}
+              />
+              <label htmlFor="new-org-tenant" className="text-sm font-medium whitespace-nowrap">Is tenant</label>
+            </div>
+            <Button onClick={handleAddOrg}>Add</Button>
           </div>
-          <Button onClick={handleAddOrg}>Add</Button>
+          {newOrgIsTenant && (
+            <p className="text-xs text-muted-foreground">Tenant organizations get 10 free hours per month by default.</p>
+          )}
         </div>
 
         {isLoading ? (
@@ -135,8 +149,23 @@ export const AdminOrganizations = () => {
                       }
                     />
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {org.used_free_hours_this_month ?? 0}
+                  <TableCell>
+                    <Input
+                      type="number"
+                      min={0}
+                      className="w-28"
+                      defaultValue={org.used_free_hours_this_month ?? 0}
+                      onBlur={(e) =>
+                        handleNumberChange(
+                          org.id,
+                          "used_free_hours_this_month",
+                          e.target.value
+                        )
+                      }
+                    />
+                    <span className="text-xs text-muted-foreground ml-1">
+                      (Remaining: {Math.max(0, (org.monthly_free_hours ?? 0) - (org.used_free_hours_this_month ?? 0))} h)
+                    </span>
                   </TableCell>
                   <TableCell>
                     <Input
