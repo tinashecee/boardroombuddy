@@ -8,7 +8,6 @@ export interface Organization {
     used_free_hours_this_month?: number;
     /** Read-only: confirmed meeting hours that have already transpired this month (from API). */
     computed_used_hours_this_month?: number;
-    billing_rate_per_hour?: number | null;
 }
 
 const API_URL = '/api/organizations';
@@ -57,7 +56,7 @@ export function useOrganizations() {
 
     const updateOrganization = async (
         id: string,
-        updates: Partial<Pick<Organization, 'name' | 'is_tenant' | 'monthly_free_hours' | 'used_free_hours_this_month' | 'billing_rate_per_hour'>>
+        updates: Partial<Pick<Organization, 'name' | 'is_tenant' | 'monthly_free_hours' | 'used_free_hours_this_month'>>
     ) => {
         // Backend expects camelCase; Organization type uses snake_case
         const body: Record<string, unknown> = {};
@@ -65,7 +64,6 @@ export function useOrganizations() {
         if (updates.is_tenant !== undefined) body.isTenant = updates.is_tenant;
         if (updates.monthly_free_hours !== undefined) body.monthlyFreeHours = updates.monthly_free_hours;
         if (updates.used_free_hours_this_month !== undefined) body.usedFreeHoursThisMonth = updates.used_free_hours_this_month;
-        if (updates.billing_rate_per_hour !== undefined) body.billingRatePerHour = updates.billing_rate_per_hour;
         try {
             const response = await fetch(`${API_URL}/${id}`, {
                 method: 'PATCH',

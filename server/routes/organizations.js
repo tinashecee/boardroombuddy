@@ -36,7 +36,7 @@ router.get('/', async (req, res) => {
 
 // Add a new organization
 router.post('/', async (req, res) => {
-  const { name, isTenant, monthlyFreeHours, billingRatePerHour } = req.body;
+  const { name, isTenant, monthlyFreeHours } = req.body;
   if (!name) return res.status(400).json({ message: 'Name is required' });
 
   const isTenantBool = !!isTenant;
@@ -55,22 +55,15 @@ router.post('/', async (req, res) => {
         monthly_free_hours,
         used_free_hours_this_month,
         billing_rate_per_hour
-      ) VALUES (?, ?, ?, ?, 0, ?)`,
-      [
-        id,
-        name,
-        isTenantBool,
-        initialMonthlyHours,
-        billingRatePerHour != null ? billingRatePerHour : null
-      ]
+      ) VALUES (?, ?, ?, ?, 0, NULL)`,
+      [id, name, isTenantBool, initialMonthlyHours]
     );
     res.status(201).json({
       id,
       name,
       is_tenant: isTenantBool,
       monthly_free_hours: initialMonthlyHours,
-      used_free_hours_this_month: 0,
-      billing_rate_per_hour: billingRatePerHour != null ? billingRatePerHour : null
+      used_free_hours_this_month: 0
     });
   } catch (error) {
     if (error.code === 'ER_DUP_ENTRY') {
@@ -113,7 +106,7 @@ router.post('/reset-tenant-balances', async (req, res) => {
 // Update organization (tenant settings, free hours, billing rate)
 router.patch('/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, isTenant, monthlyFreeHours, usedFreeHoursThisMonth, billingRatePerHour } = req.body;
+  const { name, isTenant, monthlyFreeHours, usedFreeHoursThisMonth } = req.body;
 
   try {
     const fields = [];
@@ -134,10 +127,6 @@ router.patch('/:id', async (req, res) => {
     if (usedFreeHoursThisMonth !== undefined) {
       fields.push('used_free_hours_this_month = ?');
       params.push(usedFreeHoursThisMonth);
-    }
-    if (billingRatePerHour !== undefined) {
-      fields.push('billing_rate_per_hour = ?');
-      params.push(billingRatePerHour);
     }
 
     if (fields.length === 0) {

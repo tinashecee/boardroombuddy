@@ -50,7 +50,7 @@ export const AdminOrganizations = () => {
 
   const handleNumberChange = async (
     id: string,
-    field: "monthly_free_hours" | "billing_rate_per_hour",
+    field: "monthly_free_hours",
     value: string
   ) => {
     const num = value === "" ? 0 : Number(value);
@@ -71,7 +71,7 @@ export const AdminOrganizations = () => {
           <CardTitle>Organizations & Tenant Settings</CardTitle>
         </div>
         <CardDescription>
-          Configure BMH tenants, monthly free boardroom hours, and hire settings. Monthly Free Hours and Billing Rate save when you click outside the field (blur).
+          Configure BMH tenants and monthly free boardroom hours. Monthly Free Hours save when you click outside the field (blur).
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -119,7 +119,6 @@ export const AdminOrganizations = () => {
                 <TableHead>Is Tenant</TableHead>
                 <TableHead>Monthly Free Hours</TableHead>
                 <TableHead>Used This Month (read-only)</TableHead>
-                <TableHead>Billing Rate / Hour</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -155,23 +154,6 @@ export const AdminOrganizations = () => {
                     <span className="text-xs text-muted-foreground ml-1">
                       (Remaining: {Math.max(0, (org.monthly_free_hours ?? 0) - (org.computed_used_hours_this_month ?? org.used_free_hours_this_month ?? 0))} h)
                     </span>
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      className="w-28"
-                      defaultValue={org.billing_rate_per_hour ?? 0}
-                      onBlur={(e) =>
-                        handleNumberChange(
-                          org.id,
-                          "billing_rate_per_hour",
-                          e.target.value
-                        )
-                      }
-                    />
-                    <span className="text-xs text-muted-foreground block mt-1">Saves on blur</span>
                   </TableCell>
                 </TableRow>
               ))}

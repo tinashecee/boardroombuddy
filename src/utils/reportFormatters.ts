@@ -36,17 +36,8 @@ export function calculateTotalHours(bookings: Booking[]): number {
 
 export interface OrgWithBilling {
   name: string;
-  billing_rate_per_hour?: number | null;
 }
 
-export function calculateRevenue(bookings: Booking[], orgs: OrgWithBilling[]): number {
-  const orgMap = new Map(orgs.map(o => [o.name.toLowerCase().trim(), o]));
-  let revenue = 0;
-  for (const b of bookings) {
-    if (b.bookingType !== 'HIRE' || b.durationHours == null) continue;
-    const org = orgMap.get((b.organizationName || '').toLowerCase().trim());
-    const rate = org?.billing_rate_per_hour != null ? Number(org.billing_rate_per_hour) : 0;
-    revenue += Number(b.durationHours) * rate;
-  }
-  return Math.round(revenue * 100) / 100;
+export function calculateRevenue(_bookings: Booking[], _orgs: OrgWithBilling[]): number {
+  return 0;
 }
