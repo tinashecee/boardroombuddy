@@ -239,32 +239,6 @@ export function BookingForm({ selectedDate, initialStartTime, onSubmit, onClose 
           </div>
 
           <div className="space-y-3">
-            <Label>Attendance Type</Label>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant={formData.attendanceType === 'INTERNAL' ? 'default' : 'outline'}
-                className="flex-1"
-                onClick={() =>
-                  setFormData((prev) => ({ ...prev, attendanceType: 'INTERNAL' }))
-                }
-              >
-                Internal (BMH)
-              </Button>
-              <Button
-                type="button"
-                variant={formData.attendanceType === 'EXTERNAL' ? 'default' : 'outline'}
-                className="flex-1"
-                onClick={() =>
-                  setFormData((prev) => ({ ...prev, attendanceType: 'EXTERNAL' }))
-                }
-              >
-                External
-              </Button>
-            </div>
-          </div>
-
-          <div className="space-y-3">
             <Label>Required Equipment</Label>
             <div className="grid grid-cols-2 gap-2 text-sm">
               {[
